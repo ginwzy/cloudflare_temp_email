@@ -33,6 +33,20 @@ const { t } = useI18n({
             newKeyTip: 'Please save this key now. You will not be able to see it again.',
             newKeyTitle: 'API Key Created',
             itemCount: 'Total',
+            docTitle: 'API Usage Guide',
+            docDesc: 'Use API Key to call the following endpoints programmatically. All requests require the x-api-key header. Each call consumes 1 quota.',
+            docAuth: 'Authentication',
+            docAuthDesc: 'Add the following header to all requests:',
+            docEndpoints: 'Endpoints',
+            docCreateAddr: '1. Create Temp Address',
+            docListMails: '2. List Mails',
+            docGetMail: '3. Get Mail Detail',
+            docExtract: '4. Get AI Extract Result',
+            docNotes: 'Notes',
+            docNote1: 'The jwt returned from address creation is required for all subsequent mail queries',
+            docNote2: 'Each API call consumes 1 usage quota regardless of the endpoint',
+            docNote3: 'When usage reaches the limit, the API returns HTTP 429',
+            docNote4: 'Replace YOUR_DOMAIN with your actual deployment domain',
         },
         zh: {
             title: 'API Key 管理',
@@ -57,6 +71,20 @@ const { t } = useI18n({
             newKeyTip: '请立即保存此 Key，之后将无法再次查看。',
             newKeyTitle: 'API Key 已创建',
             itemCount: '总数',
+            docTitle: 'API 使用说明',
+            docDesc: '使用 API Key 以编程方式调用以下接口。所有请求需携带 x-api-key 请求头，每次调用消耗 1 次配额。',
+            docAuth: '认证方式',
+            docAuthDesc: '在所有请求中添加以下请求头：',
+            docEndpoints: '接口列表',
+            docCreateAddr: '1. 创建临时邮箱地址',
+            docListMails: '2. 查询邮件列表',
+            docGetMail: '3. 获取邮件详情',
+            docExtract: '4. 获取 AI 提取结果',
+            docNotes: '注意事项',
+            docNote1: '创建地址时返回的 jwt 是后续所有邮件查询的凭证',
+            docNote2: '每次 API 调用消耗 1 次配额，不区分接口',
+            docNote3: '用量达到上限后，API 将返回 HTTP 429',
+            docNote4: '请将 YOUR_DOMAIN 替换为你的实际部署域名',
         }
     }
 });
@@ -183,6 +211,51 @@ onMounted(fetchData)
                     {{ t('create') }}
                 </n-button>
             </template>
+            <!-- API Documentation -->
+            <n-collapse style="margin-bottom: 16px;">
+                <n-collapse-item :title="t('docTitle')" name="doc">
+                    <n-text depth="3" style="display: block; margin-bottom: 12px;">
+                        {{ t('docDesc') }}
+                    </n-text>
+
+                    <n-h6 prefix="bar">{{ t('docAuth') }}</n-h6>
+                    <n-text depth="3">{{ t('docAuthDesc') }}</n-text>
+                    <pre class="code-block">x-api-key: sk-xxxxxxxxxxxxx</pre>
+
+                    <n-h6 prefix="bar" style="margin-top: 16px;">{{ t('docEndpoints') }}</n-h6>
+
+                    <n-text strong>{{ t('docCreateAddr') }}</n-text>
+                    <pre class="code-block">curl -X POST https://YOUR_DOMAIN/open_api/api/address/create \
+  -H "x-api-key: sk-xxx" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"test","domain":"example.com"}'
+
+# Response: {"address":"test@example.com","jwt":"eyJ..."}</pre>
+
+                    <n-text strong>{{ t('docListMails') }}</n-text>
+                    <pre class="code-block">curl "https://YOUR_DOMAIN/open_api/api/mails?jwt=JWT_TOKEN&amp;limit=20&amp;offset=0" \
+  -H "x-api-key: sk-xxx"</pre>
+
+                    <n-text strong>{{ t('docGetMail') }}</n-text>
+                    <pre class="code-block">curl "https://YOUR_DOMAIN/open_api/api/mail/MAIL_ID?jwt=JWT_TOKEN" \
+  -H "x-api-key: sk-xxx"</pre>
+
+                    <n-text strong>{{ t('docExtract') }}</n-text>
+                    <pre class="code-block">curl "https://YOUR_DOMAIN/open_api/api/address/extract/MAIL_ID?jwt=JWT_TOKEN" \
+  -H "x-api-key: sk-xxx"
+
+# Response: {"ai_extract": {...}}</pre>
+
+                    <n-h6 prefix="bar" style="margin-top: 16px;">{{ t('docNotes') }}</n-h6>
+                    <ul class="doc-notes">
+                        <li>{{ t('docNote1') }}</li>
+                        <li>{{ t('docNote2') }}</li>
+                        <li>{{ t('docNote3') }}</li>
+                        <li>{{ t('docNote4') }}</li>
+                    </ul>
+                </n-collapse-item>
+            </n-collapse>
+
             <n-data-table :columns="columns" :data="data" :loading="loading" :row-key="(row) => row.id" />
             <n-pagination v-model:page="page" :page-size="pageSize" :item-count="count"
                 :page-slot="5" @update:page="fetchData" style="margin-top: 10px;"
@@ -243,5 +316,25 @@ onMounted(fetchData)
     place-items: center;
     justify-content: center;
     margin: 20px;
+}
+.code-block {
+    background: var(--n-color-embedded, #f4f4f8);
+    border: 1px solid var(--n-border-color, #e0e0e6);
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin: 6px 0 12px;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 12.5px;
+    line-height: 1.6;
+    overflow-x: auto;
+    white-space: pre;
+    color: var(--n-text-color, #333);
+}
+.doc-notes {
+    margin: 4px 0 0;
+    padding-left: 20px;
+    line-height: 2;
+    color: var(--n-text-color-3, #999);
+    font-size: 13px;
 }
 </style>
