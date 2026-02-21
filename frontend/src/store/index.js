@@ -112,6 +112,7 @@ export const useGlobalState = createGlobalState(
         const isTelegram = ref(!!window.Telegram?.WebApp?.initData);
         const userOauth2SessionState = useSessionStorage('userOauth2SessionState', '');
         const userOauth2SessionClientID = useSessionStorage('userOauth2SessionClientID', '');
+        const sidebarCollapsed = useStorage('sidebarCollapsed', false);
         const browserFingerprint = ref('');
         return {
             isDark,
@@ -150,6 +151,7 @@ export const useGlobalState = createGlobalState(
             userOauth2SessionClientID,
             useSimpleIndex,
             addressPassword,
+            sidebarCollapsed,
             browserFingerprint,
         }
     },

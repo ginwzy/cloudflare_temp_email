@@ -3,17 +3,18 @@ import '@wangeditor/editor/dist/css/style.css'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import { useI18n } from 'vue-i18n'
 import { onMounted, onBeforeUnmount, ref, shallowRef } from 'vue'
+import { useRouter } from 'vue-router'
 import AdminContact from '../common/AdminContact.vue'
 
 import { useGlobalState } from '../../store'
 import { api } from '../../api'
 
 const message = useMessage()
+const router = useRouter()
 const isPreview = ref(false)
 const editorRef = shallowRef()
 
-
-const { settings, sendMailModel, indexTab, userSettings } = useGlobalState()
+const { settings, sendMailModel, userSettings } = useGlobalState()
 
 const { t } = useI18n({
     locale: 'zh',
@@ -90,7 +91,7 @@ const send = async () => {
         message.error(error.message || "error");
     } finally {
         message.success(t("successSend"));
-        indexTab.value = 'sendbox'
+        router.push('/sent')
     }
 }
 

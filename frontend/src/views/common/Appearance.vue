@@ -80,14 +80,7 @@ const { t } = useI18n({
             <n-form-item-row v-if="!isMobile" :label="t('useSideMargin')">
                 <n-switch v-model:value="useSideMargin" :round="false" />
             </n-form-item-row>
-            <n-form-item-row :label="t('globalTabplacement')">
-                <n-radio-group v-model:value="globalTabplacement">
-                    <n-radio-button value="top" :label="t('top')" />
-                    <n-radio-button value="left" :label="t('left')" />
-                    <n-radio-button value="right" :label="t('right')" />
-                    <n-radio-button value="bottom" :label="t('bottom')" />
-                </n-radio-group>
-            </n-form-item-row>
+            <!-- Tab placement hidden: sidebar navigation replaces tabs -->
         </n-card>
     </div>
 </template>

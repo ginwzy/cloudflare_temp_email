@@ -65,18 +65,16 @@ onMounted(async () => {
         <n-card :bordered="false" embedded v-if="!settings.fetched">
             <n-skeleton style="height: 50vh" />
         </n-card>
-        <div v-else-if="settings.address">
-            <n-alert type="info" :show-icon="false" :bordered="false">
-                <AddressSelect>
-                    <template #actions>
-                        <n-button class="address-manage" size="small" tertiary type="primary"
-                            @click="showAddressManage = true">
-                            <n-icon :component="ExchangeAlt" />
-                            {{ t('addressManage') }}
-                        </n-button>
-                    </template>
-                </AddressSelect>
-            </n-alert>
+        <div v-else-if="settings.address" class="address-bar">
+            <AddressSelect>
+                <template #actions>
+                    <n-button class="address-manage" size="small" tertiary type="primary"
+                        @click="showAddressManage = true">
+                        <n-icon :component="ExchangeAlt" />
+                        {{ t('addressManage') }}
+                    </n-button>
+                </template>
+            </AddressSelect>
         </div>
         <div v-else-if="isTelegram">
             <TelegramAddress />
@@ -131,9 +129,12 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.n-alert {
-    margin-top: 10px;
-    margin-bottom: 10px;
+.address-bar {
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    border-radius: var(--ds-radius-sm, 8px);
+    background: var(--ds-surface, #fff);
+    box-shadow: var(--ds-shadow, 0 1px 3px rgba(0,0,0,0.04));
     text-align: center;
 }
 

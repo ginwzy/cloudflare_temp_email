@@ -2,6 +2,7 @@
 import { watch, onMounted, ref, onBeforeUnmount, computed } from "vue";
 import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { useGlobalState } from '../store'
 import { CloudDownloadRound, ArrowBackIosNewFilled, ArrowForwardIosFilled, InboxRound } from '@vicons/material'
 import { useIsMobile } from '../utils/composables'
@@ -12,6 +13,7 @@ import AiExtractInfo from "./AiExtractInfo.vue";
 
 const message = useMessage()
 const isMobile = useIsMobile()
+const router = useRouter()
 
 const props = defineProps({
   enableUserDeleteEmail: {
@@ -59,7 +61,7 @@ const props = defineProps({
 const localFilterKeyword = ref('')
 
 const {
-  isDark, mailboxSplitSize, indexTab, loading, useUTCDate,
+  isDark, mailboxSplitSize, loading, useUTCDate,
   autoRefresh, configAutoRefreshInterval, sendMailModel
 } = useGlobalState()
 const autoRefreshInterval = ref(configAutoRefreshInterval.value)
@@ -291,7 +293,7 @@ const replyMail = async () => {
     contentType: 'rich',
     content: curMail.value.text ? `<p><br></p><blockquote>${curMail.value.text}</blockquote><p><br></p>` : '',
   });
-  indexTab.value = 'sendmail';
+  router.push('/compose');
 };
 
 const forwardMail = async () => {
@@ -300,7 +302,7 @@ const forwardMail = async () => {
     contentType: curMail.value.message ? 'html' : 'text',
     content: curMail.value.message || curMail.value.text,
   });
-  indexTab.value = 'sendmail';
+  router.push('/compose');
 };
 
 const onSpiltSizeChange = (size) => {
