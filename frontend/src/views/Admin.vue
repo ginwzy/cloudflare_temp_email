@@ -29,6 +29,7 @@ import MailWebhook from './admin/MailWebhook.vue';
 import WorkerConfig from './admin/WorkerConfig.vue';
 import IpBlacklistSettings from './admin/IpBlacklistSettings.vue';
 import AiExtractSettings from './admin/AiExtractSettings.vue';
+import ApiKeyManagement from './admin/ApiKeyManagement.vue';
 
 const {
   adminAuth, showAdminAuth, adminTab, loading,
@@ -93,6 +94,7 @@ const { t, locale } = useI18n({
       workerconfig: 'Worker Config',
       ipBlacklistSettings: 'IP Blacklist',
       aiExtractSettings: 'AI Extract Settings',
+      apiKeys: 'API Keys',
       appearance: 'Appearance',
       about: 'About',
       ok: 'OK',
@@ -133,6 +135,7 @@ const { t, locale } = useI18n({
       workerconfig: 'Worker 配置',
       ipBlacklistSettings: 'IP 黑名单',
       aiExtractSettings: 'AI 提取设置',
+      apiKeys: 'API Key 管理',
       appearance: '外观',
       about: '关于',
       ok: '确定',
@@ -222,6 +225,9 @@ onMounted(async () => {
           </n-tab-pane>
           <n-tab-pane name="aiExtractSettings" :tab="t('aiExtractSettings')">
             <AiExtractSettings />
+          </n-tab-pane>
+          <n-tab-pane name="apiKeys" :tab="t('apiKeys')">
+            <ApiKeyManagement />
           </n-tab-pane>
           <n-tab-pane name="webhook" :tab="t('webhookSettings')">
             <Webhook />

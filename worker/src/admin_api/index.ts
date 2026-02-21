@@ -16,6 +16,7 @@ import { sendMailbyAdmin } from './send_mail'
 import db_api from './db_api'
 import ip_blacklist_settings from './ip_blacklist_settings'
 import ai_extract_settings from './ai_extract_settings'
+import api_key_api from './api_key_api'
 import { EmailRuleSettings } from '../models'
 
 export const api = new Hono<HonoCustomType>()
@@ -388,3 +389,9 @@ api.post("/admin/ip_blacklist/settings", ip_blacklist_settings.saveIpBlacklistSe
 // AI extract settings
 api.get("/admin/ai_extract/settings", ai_extract_settings.getAiExtractSettings);
 api.post("/admin/ai_extract/settings", ai_extract_settings.saveAiExtractSettings);
+
+// API key management
+api.get("/admin/api_keys", api_key_api.list);
+api.post("/admin/api_keys", api_key_api.create);
+api.delete("/admin/api_keys/:id", api_key_api.remove);
+api.post("/admin/api_keys/:id/reset_usage", api_key_api.resetUsage);
