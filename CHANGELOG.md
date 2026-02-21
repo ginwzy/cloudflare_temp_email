@@ -6,11 +6,28 @@
   <a href="CHANGELOG_EN.md">🇺🇸 English</a>
 </p>
 
-## v1.3.0(main)
+## v1.4.0(main)
+
+### Features
+
+- feat: |用户注册| 新增用户注册邮箱正则校验功能，管理员可配置邮箱格式验证规则
+
+### Bug Fixes
+
+- fix: |文档| 修复 User Mail API 文档中错误使用 `x-admin-auth` 的问题，改为正确的 `x-user-token`
+- docs: |文档| 新增 Admin 删除邮件、删除邮箱地址、清空收件箱、清空发件箱 API 文档
+
+### Improvements
+
+- style: |邮件列表| 优化收件箱和发件箱空状态显示，根据邮件数量显示不同提示信息，添加语义化图标
+
+## v1.3.0
 
 ### Features
 
 - feat: |OAuth2| 新增 OAuth2 邮箱格式转换功能，支持通过正则表达式转换第三方登录返回的邮箱格式（如将 `user@domain` 转换为 `user@custom.domain`）
+- feat: |OAuth2| 新增 OAuth2 提供商 SVG 图标支持，管理员可为登录按钮配置自定义图标，预置 GitHub、Linux Do、Authentik 模板图标
+- feat: |发送邮件| 未配置发送邮件功能时自动隐藏发送邮件 tab、发件箱 tab 和回复按钮
 
 ### Bug Fixes
 
@@ -19,6 +36,7 @@
 ### Improvements
 
 - refactor: |代码重构| 提取地址数量限制检查为公共函数，优化代码复用性
+- perf: |性能优化| GET 请求中的地址活动时间更新改为异步执行，使用 `waitUntil` 不阻塞响应
 
 ## v1.2.1
 

@@ -6,11 +6,28 @@
   <a href="CHANGELOG_EN.md">🇺🇸 English</a>
 </p>
 
-## v1.3.0(main)
+## v1.4.0(main)
+
+### Features
+
+- feat: |User Registration| Add email regex validation for user registration, admins can configure email format validation rules
+
+### Bug Fixes
+
+- fix: |Docs| Fix User Mail API documentation incorrectly using `x-admin-auth`, changed to correct `x-user-token`
+- docs: |Docs| Add Admin API documentation for delete mail, delete address, clear inbox, and clear sent items
+
+### Improvements
+
+- style: |Mail List| Improve empty state display for inbox and sent box, show different messages based on mail count, add semantic icons
+
+## v1.3.0
 
 ### Features
 
 - feat: |OAuth2| Add email format transformation support for OAuth2, allowing regex-based email format conversion from third-party login providers (e.g., transform `user@domain` to `user@custom.domain`)
+- feat: |OAuth2| Add SVG icon support for OAuth2 providers, admins can configure custom icons for login buttons, preset icons for GitHub, Linux Do, Authentik templates
+- feat: |Send Mail| Auto-hide sendmail tab, sendbox tab, and reply button when send mail is not configured
 
 ### Bug Fixes
 
@@ -19,6 +36,7 @@
 ### Improvements
 
 - refactor: |Code Refactoring| Extract address count limit check as a public function to improve code reusability
+- perf: |Performance| Change address activity time update in GET requests to async execution using `waitUntil`, non-blocking response
 
 ## v1.2.1
 
