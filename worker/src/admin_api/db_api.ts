@@ -128,14 +128,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_api_keys_api_key ON api_keys(api_key);
 
 export default {
     initialize: async (c: Context<HonoCustomType>) => {
-        // remove all \r and \n characters from the query string
-        // split by ; and join with a ;\n
-        const query = DB_INIT_QUERIES.replace(/[\r\n]/g, "")
+        const statements = DB_INIT_QUERIES.replace(/[\r\n]/g, "")
             .split(";")
-            .map((query) => query.trim())
-            .filter((query) => query.length > 0)
-            .join(";\n");
-        await c.env.DB.exec(query);
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0);
+        await c.env.DB.batch(statements.map((s) => c.env.DB.prepare(s)));
 
         const version = await utils.getSetting(c, CONSTANTS.DB_VERSION_KEY);
         if (version) {
@@ -189,14 +186,11 @@ export default {
             await c.env.DB.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_api_keys_api_key ON api_keys(api_key);`);
         }
         if (version != CONSTANTS.DB_VERSION) {
-            // remove all \r and \n characters from the query string
-            // split by ; and join with a ;\n
-            const query = DB_INIT_QUERIES.replace(/[\r\n]/g, "")
+            const statements = DB_INIT_QUERIES.replace(/[\r\n]/g, "")
                 .split(";")
-                .map((query) => query.trim())
-                .filter((query) => query.length > 0)
-                .join(";\n");
-            await c.env.DB.exec(query);
+                .map((s) => s.trim())
+                .filter((s) => s.length > 0);
+            await c.env.DB.batch(statements.map((s) => c.env.DB.prepare(s)));
             // Update the version in the settings table
             await utils.saveSetting(c, CONSTANTS.DB_VERSION_KEY, CONSTANTS.DB_VERSION);
             return c.json({
