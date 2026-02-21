@@ -54,6 +54,7 @@ onMounted(async () => {
   flex-direction: column;
   min-height: 100vh;
   overflow-x: hidden;
+  background: var(--ds-bg);
 }
 .content-inner {
   flex: 1;
