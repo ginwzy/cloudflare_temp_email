@@ -4,12 +4,16 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import {
   InboxRound, SendRound, EditRound, SettingsRound,
-  DarkModeFilled, LightModeFilled, MenuFilled
+  DarkModeFilled, LightModeFilled, MenuFilled,
+  ContentCopyFilled
 } from '@vicons/material'
-import { GithubAlt, Language } from '@vicons/fa'
+import { GithubAlt, Language, ExchangeAlt } from '@vicons/fa'
 import { useGlobalState } from '../store'
 import { useIsMobile } from '../utils/composables'
 import { getRouterPathWithLang } from '../utils'
+import TelegramAddress from './index/TelegramAddress.vue'
+import LocalAddress from './index/LocalAddress.vue'
+import AddressManagement from './user/AddressManagement.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -18,7 +22,7 @@ const message = useMessage()
 
 const {
   isDark, toggleDark, isTelegram, openSettings, loading,
-  showAdminPage, sidebarCollapsed, settings
+  showAdminPage, sidebarCollapsed, settings, userJwt
 } = useGlobalState()
 
 const { locale, t } = useI18n({
@@ -26,10 +30,12 @@ const { locale, t } = useI18n({
     en: {
       inbox: 'Inbox', sent: 'Sent', compose: 'Compose',
       settings: 'Settings', menu: 'Menu', noAddress: 'Not logged in',
+      copied: 'Address copied', manage: 'Manage',
     },
     zh: {
       inbox: '收件箱', sent: '发件箱', compose: '写邮件',
       settings: '设置', menu: '菜单', noAddress: '未登录',
+      copied: '地址已复制', manage: '管理',
     }
   }
 })
@@ -89,6 +95,15 @@ const truncatedAddress = computed(() => {
   if (maxLocal < 3) return addr.substring(0, 21) + '...'
   return local.substring(0, maxLocal) + '...@' + domain
 })
+
+const showAddressManage = ref(false)
+
+const copyAddress = async () => {
+  try {
+    await navigator.clipboard.writeText(settings.value.address)
+    message.success(t('copied'))
+  } catch { message.error('Copy failed') }
+}
 </script>
 
 <template>
@@ -102,8 +117,18 @@ const truncatedAddress = computed(() => {
     <n-drawer-content :title="t('menu')" closable>
       <div class="sidebar-inner">
         <div v-if="settings.address" class="sidebar-address-card">
-          <div class="address-dot"></div>
-          <n-ellipsis class="address-text">{{ settings.address }}</n-ellipsis>
+          <div class="address-info">
+            <div class="address-dot"></div>
+            <n-ellipsis class="address-text">{{ settings.address }}</n-ellipsis>
+          </div>
+          <div class="address-actions">
+            <n-button text size="tiny" @click="copyAddress">
+              <template #icon><n-icon :component="ContentCopyFilled" :size="14" /></template>
+            </n-button>
+            <n-button text size="tiny" @click="showAddressManage = true">
+              <template #icon><n-icon :component="ExchangeAlt" :size="14" /></template>
+            </n-button>
+          </div>
         </div>
         <div class="sidebar-nav">
           <div v-for="item in navItems" :key="item.key"
@@ -142,8 +167,18 @@ const truncatedAddress = computed(() => {
       </div>
 
       <div v-if="!sidebarCollapsed && settings.address" class="sidebar-address-card">
-        <div class="address-dot"></div>
-        <n-ellipsis class="address-text">{{ settings.address }}</n-ellipsis>
+        <div class="address-info">
+          <div class="address-dot"></div>
+          <n-ellipsis class="address-text">{{ settings.address }}</n-ellipsis>
+        </div>
+        <div class="address-actions">
+          <n-button text size="tiny" @click="copyAddress">
+            <template #icon><n-icon :component="ContentCopyFilled" :size="14" /></template>
+          </n-button>
+          <n-button text size="tiny" @click="showAddressManage = true">
+            <template #icon><n-icon :component="ExchangeAlt" :size="14" /></template>
+          </n-button>
+        </div>
       </div>
 
       <div class="sidebar-nav">
@@ -172,6 +207,12 @@ const truncatedAddress = computed(() => {
       </div>
     </div>
   </aside>
+
+  <n-modal v-model:show="showAddressManage" preset="card" :title="t('manage')">
+    <TelegramAddress v-if="isTelegram" />
+    <AddressManagement v-else-if="userJwt" />
+    <LocalAddress v-else />
+  </n-modal>
 </template>
 
 <style scoped>
@@ -211,8 +252,8 @@ const truncatedAddress = computed(() => {
 
 .sidebar-address-card {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 6px;
   padding: 10px 12px;
   margin-bottom: 16px;
   border-radius: var(--ds-radius-sm);
@@ -220,6 +261,17 @@ const truncatedAddress = computed(() => {
   font-size: 12px;
   color: var(--ds-text-secondary);
   overflow: hidden;
+}
+.address-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.address-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: 16px;
 }
 .address-dot {
   width: 8px;

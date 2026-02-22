@@ -10,7 +10,7 @@ import AddressBar from './index/AddressBar.vue'
 
 const message = useMessage()
 const notification = useNotification()
-const { openSettings, userSettings } = useGlobalState()
+const { openSettings, userSettings, settings } = useGlobalState()
 
 const { t } = useI18n({
   messages: {
@@ -35,7 +35,7 @@ onMounted(async () => {
     <Sidebar />
     <div class="main-content">
       <div class="content-inner">
-        <AddressBar />
+        <AddressBar v-if="!settings.address" />
         <router-view />
       </div>
       <Footer />

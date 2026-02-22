@@ -6,7 +6,7 @@ import { api } from '../../api'
 import MailBox from '../../components/MailBox.vue'
 import SimpleIndex from '../index/SimpleIndex.vue'
 
-const { openSettings, useSimpleIndex } = useGlobalState()
+const { openSettings, useSimpleIndex, settings } = useGlobalState()
 const message = useMessage()
 const route = useRoute()
 
@@ -62,17 +62,19 @@ onMounted(() => {
 </script>
 
 <template>
-  <SimpleIndex v-if="useSimpleIndex" />
-  <div v-else>
-    <div v-if="showMailIdQuery" style="margin-bottom: 10px;">
-      <n-input-group>
-        <n-input v-model:value="mailIdQuery" />
-        <n-button @click="queryMail" type="primary" tertiary>Query</n-button>
-      </n-input-group>
+  <div v-if="settings.address">
+    <SimpleIndex v-if="useSimpleIndex" />
+    <div v-else>
+      <div v-if="showMailIdQuery" style="margin-bottom: 10px;">
+        <n-input-group>
+          <n-input v-model:value="mailIdQuery" />
+          <n-button @click="queryMail" type="primary" tertiary>Query</n-button>
+        </n-input-group>
+      </div>
+      <MailBox :key="mailBoxKey" :showEMailTo="false" :showReply="openSettings.enableSendMail"
+        :showSaveS3="openSettings.isS3Enabled" :saveToS3="saveToS3"
+        :enableUserDeleteEmail="openSettings.enableUserDeleteEmail"
+        :fetchMailData="fetchMailData" :deleteMail="deleteMail" :showFilterInput="true" />
     </div>
-    <MailBox :key="mailBoxKey" :showEMailTo="false" :showReply="openSettings.enableSendMail"
-      :showSaveS3="openSettings.isS3Enabled" :saveToS3="saveToS3"
-      :enableUserDeleteEmail="openSettings.enableUserDeleteEmail"
-      :fetchMailData="fetchMailData" :deleteMail="deleteMail" :showFilterInput="true" />
   </div>
 </template>
