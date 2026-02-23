@@ -4,49 +4,52 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import {
   InboxRound, SendRound, EditRound, SettingsRound,
-  DarkModeFilled, LightModeFilled, MenuFilled,
-  ContentCopyFilled
+  DarkModeFilled, LightModeFilled, ContentCopyFilled,
+  AdminPanelSettingsRound, AlternateEmailRound, PersonRound
 } from '@vicons/material'
 import { GithubAlt, Language, ExchangeAlt } from '@vicons/fa'
 import { useGlobalState } from '../store'
-import { useIsMobile } from '../utils/composables'
 import { getRouterPathWithLang } from '../utils'
-import TelegramAddress from './index/TelegramAddress.vue'
-import LocalAddress from './index/LocalAddress.vue'
-import AddressManagement from './user/AddressManagement.vue'
+import TelegramAddress from '../views/index/TelegramAddress.vue'
+import LocalAddress from '../views/index/LocalAddress.vue'
+import AddressManagement from '../views/user/AddressManagement.vue'
 
 const route = useRoute()
 const router = useRouter()
-const isMobile = useIsMobile()
 const message = useMessage()
 
 const {
   isDark, toggleDark, isTelegram, openSettings, loading,
-  showAdminPage, sidebarCollapsed, settings, userJwt
+  showAdminPage, sidebarCollapsed, settings, userJwt, userSettings
 } = useGlobalState()
 
 const { locale, t } = useI18n({
   messages: {
     en: {
       inbox: 'Inbox', sent: 'Sent', compose: 'Compose',
-      settings: 'Settings', menu: 'Menu', noAddress: 'Not logged in',
-      copied: 'Address copied', manage: 'Manage',
+      settings: 'Settings', addresses: 'Addresses', admin: 'Admin',
+      noAddress: 'Not logged in', copied: 'Address copied',
+      manage: 'Manage', account: 'Account',
     },
     zh: {
       inbox: '收件箱', sent: '发件箱', compose: '写邮件',
-      settings: '设置', menu: '菜单', noAddress: '未登录',
-      copied: '地址已复制', manage: '管理',
+      settings: '设置', addresses: '地址管理', admin: '管理面板',
+      noAddress: '未登录', copied: '地址已复制',
+      manage: '管理', account: '账户',
     }
   }
 })
 
 const showDrawer = ref(false)
-const version = import.meta.env.PACKAGE_VERSION ? `v${import.meta.env.PACKAGE_VERSION}` : ""
+const showAddressManage = ref(false)
+const version = import.meta.env.PACKAGE_VERSION ? `v${import.meta.env.PACKAGE_VERSION}` : ''
 
 const activeKey = computed(() => {
-  if (route.path.includes('/settings')) return 'settings'
-  if (route.path.includes('/compose')) return 'compose'
-  if (route.path.includes('/sent')) return 'sent'
+  const path = route.path
+  if (path.includes('/settings')) return 'settings'
+  if (path.includes('/compose')) return 'compose'
+  if (path.includes('/sent')) return 'sent'
+  if (path.includes('/addresses')) return 'addresses'
   return 'inbox'
 })
 
@@ -54,7 +57,8 @@ const navItems = computed(() => [
   { key: 'inbox', label: t('inbox'), icon: InboxRound, path: '/', show: true },
   { key: 'sent', label: t('sent'), icon: SendRound, path: '/sent', show: openSettings.value.enableSendMail },
   { key: 'compose', label: t('compose'), icon: EditRound, path: '/compose', show: openSettings.value.enableSendMail },
-  { key: 'settings', label: t('settings'), icon: SettingsRound, path: '/settings', show: true },
+  { key: 'addresses', label: t('addresses'), icon: AlternateEmailRound, path: '/addresses', show: !!userJwt.value },
+  { key: 'settings', label: t('settings'), icon: SettingsRound, path: '/settings/account', show: true },
 ].filter(i => i.show))
 
 const navigate = async (path) => {
@@ -70,21 +74,6 @@ const changeLocale = async () => {
   }
 }
 
-const logoClickCount = ref(0)
-const logoClick = async () => {
-  if (route.path.includes('admin')) { logoClickCount.value = 0; return }
-  logoClickCount.value++
-  if (logoClickCount.value >= 5) {
-    logoClickCount.value = 0
-    message.info('Change to admin Page')
-    loading.value = true
-    await router.push(getRouterPathWithLang('/admin', locale.value))
-    loading.value = false
-  } else {
-    message.info(`Click ${5 - logoClickCount.value + 1} times to enter the admin page`)
-  }
-}
-
 const truncatedAddress = computed(() => {
   const addr = settings.value.address
   if (!addr) return t('noAddress')
@@ -96,8 +85,6 @@ const truncatedAddress = computed(() => {
   return local.substring(0, maxLocal) + '...@' + domain
 })
 
-const showAddressManage = ref(false)
-
 const copyAddress = async () => {
   try {
     await navigator.clipboard.writeText(settings.value.address)
@@ -107,59 +94,9 @@ const copyAddress = async () => {
 </script>
 
 <template>
-  <!-- Mobile: hamburger button -->
-  <n-button v-if="isMobile" class="mobile-menu-btn" text @click="showDrawer = true">
-    <template #icon><n-icon :component="MenuFilled" :size="22" /></template>
-  </n-button>
-
-  <!-- Mobile drawer -->
-  <n-drawer v-if="isMobile" v-model:show="showDrawer" placement="left" :width="280">
-    <n-drawer-content :title="t('menu')" closable>
-      <div class="sidebar-inner">
-        <div v-if="settings.address" class="sidebar-address-card">
-          <div class="address-info">
-            <div class="address-dot"></div>
-            <n-ellipsis class="address-text">{{ settings.address }}</n-ellipsis>
-          </div>
-          <div class="address-actions">
-            <n-button text size="tiny" @click="copyAddress">
-              <template #icon><n-icon :component="ContentCopyFilled" :size="14" /></template>
-            </n-button>
-            <n-button text size="tiny" @click="showAddressManage = true">
-              <template #icon><n-icon :component="ExchangeAlt" :size="14" /></template>
-            </n-button>
-          </div>
-        </div>
-        <div class="sidebar-nav">
-          <div v-for="item in navItems" :key="item.key"
-            class="nav-item" :class="{ active: activeKey === item.key }"
-            @click="navigate(item.path)">
-            <n-icon :component="item.icon" :size="20" />
-            <span>{{ item.label }}</span>
-          </div>
-        </div>
-        <div class="sidebar-bottom">
-          <n-button text @click="toggleDark(); showDrawer = false">
-            <template #icon>
-              <n-icon :component="isDark ? LightModeFilled : DarkModeFilled" />
-            </template>
-          </n-button>
-          <n-button text @click="changeLocale(); showDrawer = false">
-            <template #icon><n-icon :component="Language" /></template>
-          </n-button>
-          <n-button v-if="openSettings.showGithub" text tag="a" target="_blank"
-            href="https://github.com/dreamhunter2333/cloudflare_temp_email">
-            <template #icon><n-icon :component="GithubAlt" /></template>
-          </n-button>
-        </div>
-      </div>
-    </n-drawer-content>
-  </n-drawer>
-
-  <!-- Desktop sidebar -->
-  <aside v-else class="sidebar" :class="{ collapsed: sidebarCollapsed }">
+  <aside class="sidebar" :class="{ collapsed: sidebarCollapsed }">
     <div class="sidebar-inner">
-      <div class="sidebar-logo" @click="logoClick">
+      <div class="sidebar-logo">
         <n-avatar src="/logo.png" :size="32" round />
         <span v-if="!sidebarCollapsed" class="logo-text">
           {{ openSettings.title || 'Temp Email' }}
@@ -187,6 +124,13 @@ const copyAddress = async () => {
           @click="navigate(item.path)">
           <n-icon :component="item.icon" :size="20" />
           <span v-if="!sidebarCollapsed">{{ item.label }}</span>
+        </div>
+      </div>
+
+      <div v-if="showAdminPage && !sidebarCollapsed" class="sidebar-admin">
+        <div class="nav-item admin-link" @click="navigate('/admin/dashboard')">
+          <n-icon :component="AdminPanelSettingsRound" :size="20" />
+          <span>{{ t('admin') }}</span>
         </div>
       </div>
 
@@ -225,7 +169,6 @@ const copyAddress = async () => {
   flex-shrink: 0;
 }
 .sidebar.collapsed { width: var(--ds-sidebar-collapsed-width); }
-
 .sidebar-inner {
   display: flex;
   flex-direction: column;
@@ -234,7 +177,6 @@ const copyAddress = async () => {
   position: sticky;
   top: 0;
 }
-
 .sidebar-logo {
   display: flex;
   align-items: center;
@@ -249,7 +191,6 @@ const copyAddress = async () => {
   white-space: nowrap;
   overflow: hidden;
 }
-
 .sidebar-address-card {
   display: flex;
   flex-direction: column;
@@ -280,18 +221,13 @@ const copyAddress = async () => {
   background: #22C55E;
   flex-shrink: 0;
 }
-.address-text {
-  flex: 1;
-  min-width: 0;
-}
-
+.address-text { flex: 1; min-width: 0; }
 .sidebar-nav {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
-
 .nav-item {
   display: flex;
   align-items: center;
@@ -310,7 +246,14 @@ const copyAddress = async () => {
   color: var(--ds-primary);
   font-weight: 600;
 }
-
+.sidebar-admin {
+  padding-top: 8px;
+  margin-top: 4px;
+  border-top: 1px solid var(--ds-border);
+}
+.admin-link {
+  color: var(--ds-text-secondary);
+}
 .sidebar-bottom {
   display: flex;
   align-items: center;
@@ -318,12 +261,5 @@ const copyAddress = async () => {
   padding-top: 12px;
   border-top: 1px solid var(--ds-border);
   flex-wrap: wrap;
-}
-
-.mobile-menu-btn {
-  position: fixed;
-  top: 14px;
-  left: 14px;
-  z-index: 100;
 }
 </style>

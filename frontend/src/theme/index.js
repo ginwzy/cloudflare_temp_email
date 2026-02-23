@@ -1,20 +1,20 @@
 export const lightThemeOverrides = {
   common: {
-    fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif",
-    primaryColor: '#2563EB',
-    primaryColorHover: '#1D4ED8',
-    primaryColorPressed: '#1E40AF',
-    primaryColorSuppl: '#3B82F6',
-    borderRadius: '8px',
-    borderRadiusSmall: '6px',
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+    primaryColor: '#3B82F6',
+    primaryColorHover: '#2563EB',
+    primaryColorPressed: '#1D4ED8',
+    primaryColorSuppl: '#60A5FA',
+    borderRadius: '10px',
+    borderRadiusSmall: '8px',
   },
   Card: {
-    borderRadius: '12px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06)',
+    borderRadius: '14px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.03), 0 1px 2px rgba(0,0,0,0.04)',
   },
   Button: {
-    borderRadiusMedium: '8px',
-    borderRadiusSmall: '6px',
+    borderRadiusMedium: '10px',
+    borderRadiusSmall: '8px',
   },
 }
 
