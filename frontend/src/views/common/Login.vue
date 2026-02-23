@@ -303,12 +303,6 @@ onMounted(async () => {
                         </template>
                         {{ loginAndBindTag }}
                     </n-button>
-                    <n-button v-if="showNewAddressTab" @click="tabValue = 'register'" block secondary strong>
-                        <template #icon>
-                            <n-icon :component="NewLabelOutlined" />
-                        </template>
-                        {{ t('getNewEmail') }}
-                    </n-button>
                 </n-form>
             </n-tab-pane>
             <n-tab-pane v-if="showNewAddressTab" name="register" :tab="t('getNewEmail')">

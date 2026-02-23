@@ -58,7 +58,7 @@ const navItems = computed(() => [
   { key: 'sent', label: t('sent'), icon: SendRound, path: '/sent', show: openSettings.value.enableSendMail },
   { key: 'compose', label: t('compose'), icon: EditRound, path: '/compose', show: openSettings.value.enableSendMail },
   { key: 'addresses', label: t('addresses'), icon: AlternateEmailRound, path: '/addresses', show: !!userJwt.value },
-  { key: 'settings', label: t('settings'), icon: SettingsRound, path: '/settings/account', show: true },
+  { key: 'settings', label: t('settings'), icon: SettingsRound, path: '/settings/account', show: !!settings.value.address || !!userJwt.value },
 ].filter(i => i.show))
 
 const navigate = async (path) => {

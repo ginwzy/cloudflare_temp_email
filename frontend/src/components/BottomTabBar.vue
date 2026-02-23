@@ -99,7 +99,7 @@ const changeLocale = async () => {
   <n-drawer v-model:show="showMore" placement="bottom" :height="320" :closable="true">
     <n-drawer-content :title="t('more')">
       <div class="more-menu">
-        <div class="more-item" @click="navigate('/settings/account'); showMore = false">
+        <div v-if="settings.address || userJwt" class="more-item" @click="navigate('/settings/account'); showMore = false">
           <n-icon :component="SettingsRound" :size="20" />
           <span>{{ t('settings') }}</span>
         </div>

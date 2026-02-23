@@ -7,7 +7,7 @@ import InboxView from '../views/pages/InboxView.vue'
 import i18n from '../i18n'
 import { useGlobalState } from '../store'
 
-const { jwt } = useGlobalState()
+const { jwt, userJwt } = useGlobalState()
 
 const router = createRouter({
     history: createWebHistory(),
@@ -40,10 +40,17 @@ const router = createRouter({
                 {
                     path: 'settings',
                     component: SettingsLayout,
+                    beforeEnter: (to, from, next) => {
+                        if (!jwt.value && !userJwt.value) {
+                            next('/')
+                        } else {
+                            next()
+                        }
+                    },
                     children: [
                         { path: '', redirect: '/settings/account' },
                         { path: 'account', alias: '/:lang/settings/account', component: () => import('../views/settings/AccountSettings.vue') },
-                        { path: 'appearance', alias: '/:lang/settings/appearance', component: () => import('../views/settings/AppearanceSettings.vue') },
+                        { path: 'appearance', redirect: '/settings/account' },
                         { path: 'auto-reply', alias: '/:lang/settings/auto-reply', component: () => import('../views/settings/AutoReplySettings.vue') },
                         { path: 'webhook', alias: '/:lang/settings/webhook', component: () => import('../views/settings/WebhookSettings.vue') },
                         { path: 'attachments', alias: '/:lang/settings/attachments', component: () => import('../views/settings/AttachmentSettings.vue') },
