@@ -50,20 +50,24 @@ onMounted(async () => {
 <style scoped>
 .app-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 .app-content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
   overflow-x: hidden;
+  overflow-y: auto;
   background: var(--ds-bg);
 }
 .content-inner {
   flex: 1;
   padding: 20px;
   width: 100%;
+  max-width: var(--ds-content-max-width);
+  margin: 0 auto;
   box-sizing: border-box;
 }
 @media (max-width: 768px) {

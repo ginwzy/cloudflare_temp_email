@@ -152,7 +152,7 @@ const copyAddress = async () => {
     </div>
   </aside>
 
-  <n-modal v-model:show="showAddressManage" preset="card" :title="t('manage')">
+  <n-modal v-model:show="showAddressManage" preset="card" :title="t('manage')" style="max-width: 600px; width: 90%;">
     <TelegramAddress v-if="isTelegram" />
     <AddressManagement v-else-if="userJwt" />
     <LocalAddress v-else />

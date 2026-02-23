@@ -20,12 +20,12 @@ const { t } = useI18n({
 <template>
     <div>
         <n-divider class="footer-divider" />
-        <div style="text-align: center; padding: 20px">
+        <div style="text-align: center; padding: 8px 20px">
             <n-space justify="center">
-                <n-text depth="3">
+                <n-text depth="3" style="font-size: 12px;">
                     {{ t('copyright') }} © 2023-{{ new Date().getFullYear() }}
                 </n-text>
-                <n-text depth="3">
+                <n-text depth="3" style="font-size: 12px;">
                     <div v-html="openSettings.copyright"></div>
                 </n-text>
             </n-space>

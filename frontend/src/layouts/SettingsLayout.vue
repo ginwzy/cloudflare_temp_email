@@ -54,7 +54,7 @@ const navigate = async (path) => {
 
 <template>
   <div class="settings-layout" :class="{ mobile: isMobile }">
-    <div v-if="!isMobile" class="settings-nav">
+    <div v-if="!isMobile && navItems.length > 1" class="settings-nav">
       <h3 class="settings-nav-title">{{ t('settings') }}</h3>
       <div v-for="item in navItems" :key="item.key"
         class="settings-nav-item" :class="{ active: activeKey === item.key }"

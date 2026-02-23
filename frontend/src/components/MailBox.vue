@@ -616,7 +616,7 @@ onBeforeUnmount(() => {
 .mail-panels {
   display: flex;
   gap: 12px;
-  min-height: 70vh;
+  height: calc(100vh - 140px);
 }
 
 .mail-list-panel {
@@ -639,14 +639,13 @@ onBeforeUnmount(() => {
 
 .mail-list-scroll {
   overflow-y: auto;
-  max-height: calc(100vh - 180px);
+  height: 100%;
 }
 
 .mail-detail-scroll {
   flex: 1;
   overflow-y: auto;
   padding: 20px 24px;
-  max-height: calc(100vh - 220px);
 }
 
 .mail-row {
