@@ -69,28 +69,36 @@ api.post('/admin/new_address', async (c) => {
 api.delete('/admin/delete_address/:id', async (c) => {
     const msgs = i18n.getMessagesbyContext(c);
     const { id } = c.req.param();
+    // Fetch address name before deleting so cleanup queries can use it
+    const addr = await c.env.DB.prepare(
+        `SELECT name FROM address WHERE id = ?`
+    ).bind(id).first<{ name: string }>();
+    if (!addr) {
+        return c.text(msgs.OperationFailedMsg, 404)
+    }
     const { success } = await c.env.DB.prepare(
-        `DELETE FROM address WHERE id = ? `
+        `DELETE FROM address WHERE id = ?`
     ).bind(id).run();
     if (!success) {
         return c.text(msgs.OperationFailedMsg, 500)
     }
     const { success: mailSuccess } = await c.env.DB.prepare(
-        `DELETE FROM raw_mails WHERE address IN`
-        + ` (select name from address where id = ?) `
-    ).bind(id).run();
+        `DELETE FROM raw_mails WHERE address = ?`
+    ).bind(addr.name).run();
     if (!mailSuccess) {
         return c.text(msgs.OperationFailedMsg, 500)
     }
     const { success: sendAccess } = await c.env.DB.prepare(
-        `DELETE FROM address_sender WHERE address IN`
-        + ` (select name from address where id = ?) `
-    ).bind(id).run();
+        `DELETE FROM address_sender WHERE address = ?`
+    ).bind(addr.name).run();
     const { success: usersAddressSuccess } = await c.env.DB.prepare(
         `DELETE FROM users_address WHERE address_id = ?`
     ).bind(id).run();
+    const { success: apiKeyAddrSuccess } = await c.env.DB.prepare(
+        `DELETE FROM api_key_addresses WHERE address = ?`
+    ).bind(addr.name).run();
     return c.json({
-        success: success && mailSuccess && sendAccess && usersAddressSuccess
+        success: success && mailSuccess && sendAccess && usersAddressSuccess && apiKeyAddrSuccess
     })
 })
 
