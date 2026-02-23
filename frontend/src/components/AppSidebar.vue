@@ -182,7 +182,7 @@ const copyAddress = async () => {
   align-items: center;
   gap: 10px;
   padding: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   cursor: pointer;
 }
 .logo-text {
@@ -196,7 +196,7 @@ const copyAddress = async () => {
   flex-direction: column;
   gap: 6px;
   padding: 10px 12px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   border-radius: var(--ds-radius-sm);
   background: var(--ds-bg);
   font-size: 12px;
@@ -232,7 +232,7 @@ const copyAddress = async () => {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 9px 12px;
   border-radius: var(--ds-radius-sm);
   cursor: pointer;
   color: var(--ds-text-secondary);

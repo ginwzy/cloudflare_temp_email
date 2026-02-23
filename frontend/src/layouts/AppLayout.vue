@@ -62,16 +62,14 @@ onMounted(async () => {
 }
 .content-inner {
   flex: 1;
-  padding: 24px;
-  max-width: 1200px;
+  padding: 20px;
   width: 100%;
-  margin: 0 auto;
   box-sizing: border-box;
 }
 @media (max-width: 768px) {
   .content-inner {
-    padding: 16px;
-    padding-bottom: calc(16px + var(--ds-bottom-bar-height));
+    padding: 12px;
+    padding-bottom: calc(12px + var(--ds-bottom-bar-height));
   }
 }
 </style>

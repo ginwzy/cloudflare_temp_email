@@ -4,7 +4,7 @@ import { useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useGlobalState } from '../store'
-import { CloudDownloadRound, ArrowBackIosNewFilled, ArrowForwardIosFilled, InboxRound } from '@vicons/material'
+import { CloudDownloadRound, ArrowBackIosNewFilled, ArrowForwardIosFilled, InboxRound, RefreshRound } from '@vicons/material'
 import { useIsMobile } from '../utils/composables'
 import { processItem } from '../utils/email-parser'
 import { utcToLocalDate } from '../utils';
@@ -193,6 +193,27 @@ const { t } = useI18n({
     }
   }
 });
+
+const getAvatarColor = (name) => {
+  const colors = ['#3B82F6','#8B5CF6','#EC4899','#F59E0B','#10B981','#06B6D4','#F97316','#6366F1']
+  if (!name) return colors[0]
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  return colors[Math.abs(hash) % colors.length]
+}
+
+const getSenderInitial = (source) => {
+  if (!source) return '?'
+  const name = source.split('<')[0].trim().split('@')[0]
+  return (name[0] || '?').toUpperCase()
+}
+
+const getSenderName = (source) => {
+  if (!source) return ''
+  const match = source.match(/^(.+?)\s*</)
+  if (match) return match[1].trim()
+  return source.split('@')[0]
+}
 
 const setupAutoRefresh = async (autoRefresh) => {
   // auto refresh every configAutoRefreshInterval seconds
@@ -402,50 +423,50 @@ onBeforeUnmount(() => {
   <div>
     <div v-if="!isMobile" class="left">
       <div style="margin-bottom: 10px;">
-        <n-space v-if="multiActionMode" align="center">
-          <n-button @click="multiActionModeClick(false)" tertiary>
-            {{ t('cancelMultiAction') }}
-          </n-button>
-          <n-button @click="multiActionSelectAll(true)" tertiary>
-            {{ t('selectAll') }}
-          </n-button>
-          <n-button @click="multiActionSelectAll(false)" tertiary>
-            {{ t('unselectAll') }}
-          </n-button>
-          <n-popconfirm v-if="enableUserDeleteEmail" @positive-click="multiActionDeleteMail">
-            <template #trigger>
-              <n-button tertiary type="error">{{ t('delete') }}</n-button>
-            </template>
-            {{ t('deleteMailTip') }}
-          </n-popconfirm>
-          <n-button @click="multiActionDownload" tertiary type="info">
-            <template #icon>
-              <n-icon :component="CloudDownloadRound" />
-            </template>
-            {{ t('downloadMail') }}
-          </n-button>
-        </n-space>
-        <n-space v-else align="center">
-          <n-button @click="multiActionModeClick(true)" type="primary" tertiary>
-            {{ t('multiAction') }}
-          </n-button>
-          <n-pagination v-model:page="page" v-model:page-size="pageSize" :item-count="count" :page-sizes="[20, 50, 100]"
-            show-size-picker />
-          <n-switch v-model:value="autoRefresh" :round="false">
-            <template #checked>
-              {{ t('refreshAfter', { msg: autoRefreshInterval }) }}
-            </template>
-            <template #unchecked>
-              {{ t('autoRefresh') }}
-            </template>
-          </n-switch>
-          <n-button @click="backFirstPageAndRefresh" type="primary" tertiary>
-            {{ t('refresh') }}
-          </n-button>
-          <n-input v-if="showFilterInput" v-model:value="localFilterKeyword"
-            :placeholder="t('keywordQueryTip')" style="width: 200px; display: flex; align-items: center;"
-            clearable />
-        </n-space>
+        <div v-if="multiActionMode" class="toolbar">
+          <div class="toolbar-left">
+            <n-button text size="small" @click="multiActionModeClick(false)">
+              {{ t('cancelMultiAction') }}
+            </n-button>
+            <n-button text size="small" @click="multiActionSelectAll(true)">
+              {{ t('selectAll') }}
+            </n-button>
+            <n-button text size="small" @click="multiActionSelectAll(false)">
+              {{ t('unselectAll') }}
+            </n-button>
+          </div>
+          <div class="toolbar-right">
+            <n-popconfirm v-if="enableUserDeleteEmail" @positive-click="multiActionDeleteMail">
+              <template #trigger>
+                <n-button text size="small" type="error">{{ t('delete') }}</n-button>
+              </template>
+              {{ t('deleteMailTip') }}
+            </n-popconfirm>
+            <n-button text size="small" type="info" @click="multiActionDownload">
+              <template #icon><n-icon :component="CloudDownloadRound" /></template>
+              {{ t('downloadMail') }}
+            </n-button>
+          </div>
+        </div>
+        <div v-else class="toolbar">
+          <div class="toolbar-left">
+            <n-button text size="small" @click="multiActionModeClick(true)">
+              {{ t('multiAction') }}
+            </n-button>
+          </div>
+          <div class="toolbar-right">
+            <n-input v-if="showFilterInput" v-model:value="localFilterKeyword"
+              :placeholder="t('keywordQueryTip')" size="small" clearable
+              style="width: 160px;" />
+            <n-pagination v-model:page="page" v-model:page-size="pageSize"
+              :item-count="count" :page-sizes="[20, 50, 100]" simple show-size-picker />
+            <n-button text size="small" @click="autoRefresh = !autoRefresh; backFirstPageAndRefresh()"
+              :type="autoRefresh ? 'primary' : 'default'">
+              <template #icon><n-icon :component="RefreshRound" /></template>
+            </n-button>
+            <span v-if="autoRefresh" class="refresh-countdown">{{ autoRefreshInterval }}s</span>
+          </div>
+        </div>
       </div>
       <div class="mail-panels">
         <div class="mail-list-panel" :style="{ flex: `0 0 ${mailboxSplitSize * 100}%` }">
@@ -453,14 +474,15 @@ onBeforeUnmount(() => {
             <div v-for="row in data" :key="row.id" @click="() => clickRow(row)"
               class="mail-row" :class="{ 'mail-row-active': curMail && row.id === curMail.id }">
               <n-checkbox v-if="multiActionMode" v-model:checked="row.checked" style="margin-right: 8px;" />
+              <div class="mail-avatar" :style="{ background: getAvatarColor(row.source) }">
+                {{ getSenderInitial(row.source) }}
+              </div>
               <div class="mail-row-content">
-                <div class="mail-row-subject">{{ row.subject || '(no subject)' }}</div>
-                <div class="mail-row-meta">
-                  <n-ellipsis style="max-width: 200px; display: inline;">
-                    {{ showEMailTo ? row.source : row.source }}
-                  </n-ellipsis>
+                <div class="mail-row-header">
+                  <span class="mail-row-sender">{{ getSenderName(row.source) }}</span>
                   <span class="mail-row-time">{{ utcToLocalDate(row.created_at, useUTCDate) }}</span>
                 </div>
+                <div class="mail-row-subject">{{ row.subject || '(no subject)' }}</div>
                 <AiExtractInfo :metadata="row.metadata" compact />
               </div>
             </div>
@@ -471,13 +493,13 @@ onBeforeUnmount(() => {
           </div>
         </div>
         <div class="mail-detail-panel">
-          <div v-if="curMail" style="padding: 8px 12px;">
+          <div v-if="curMail" style="padding: 6px 12px;">
             <n-flex justify="space-between">
-              <n-button @click="prevMail" :disabled="!canGoPrevMail" text size="small">
+              <n-button @click="prevMail" :disabled="!canGoPrevMail" text size="tiny">
                 <template #icon><n-icon><ArrowBackIosNewFilled /></n-icon></template>
                 {{ t('prevMail') }}
               </n-button>
-              <n-button @click="nextMail" :disabled="!canGoNextMail" text size="small" icon-placement="right">
+              <n-button @click="nextMail" :disabled="!canGoNextMail" text size="tiny" icon-placement="right">
                 <template #icon><n-icon><ArrowForwardIosFilled /></n-icon></template>
                 {{ t('nextMail') }}
               </n-button>
@@ -517,12 +539,15 @@ onBeforeUnmount(() => {
       </div>
       <div style="overflow: auto; min-height: 60vh; max-height: 100vh;">
         <div v-for="row in data" :key="row.id" @click="() => clickRow(row)" class="mail-row">
+          <div class="mail-avatar" :style="{ background: getAvatarColor(row.source) }">
+            {{ getSenderInitial(row.source) }}
+          </div>
           <div class="mail-row-content">
-            <div class="mail-row-subject">{{ row.subject || '(no subject)' }}</div>
-            <div class="mail-row-meta">
-              <n-ellipsis style="max-width: 180px; display: inline;">{{ row.source }}</n-ellipsis>
+            <div class="mail-row-header">
+              <span class="mail-row-sender">{{ getSenderName(row.source) }}</span>
               <span class="mail-row-time">{{ utcToLocalDate(row.created_at, useUTCDate) }}</span>
             </div>
+            <div class="mail-row-subject">{{ row.subject || '(no subject)' }}</div>
           </div>
         </div>
       </div>
@@ -564,9 +589,33 @@ onBeforeUnmount(() => {
 <style scoped>
 .left { text-align: left; }
 
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.refresh-countdown {
+  font-size: 11px;
+  color: var(--ds-primary);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
 .mail-panels {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   min-height: 70vh;
 }
 
@@ -575,7 +624,7 @@ onBeforeUnmount(() => {
   border-radius: var(--ds-radius, 12px);
   box-shadow: var(--ds-shadow);
   overflow: hidden;
-  min-width: 280px;
+  min-width: 300px;
 }
 
 .mail-detail-panel {
@@ -590,20 +639,21 @@ onBeforeUnmount(() => {
 
 .mail-list-scroll {
   overflow-y: auto;
-  max-height: calc(100vh - 200px);
+  max-height: calc(100vh - 180px);
 }
 
 .mail-detail-scroll {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 20px;
-  max-height: calc(100vh - 240px);
+  padding: 20px 24px;
+  max-height: calc(100vh - 220px);
 }
 
 .mail-row {
   display: flex;
-  align-items: center;
-  padding: 12px 16px;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
   cursor: pointer;
   border-bottom: 1px solid var(--ds-border, #E2E8F0);
   transition: background var(--ds-transition, 0.2s ease);
@@ -612,32 +662,55 @@ onBeforeUnmount(() => {
 .mail-row-active {
   background: color-mix(in srgb, var(--ds-primary, #2563EB) 8%, transparent);
   border-left: 3px solid var(--ds-primary, #2563EB);
+  padding-left: 13px;
+}
+
+.mail-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .mail-row-content { flex: 1; min-width: 0; }
 
-.mail-row-subject {
+.mail-row-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.mail-row-sender {
   font-weight: 600;
   font-size: 13px;
+  color: var(--ds-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mail-row-subject {
+  font-size: 12px;
   line-height: 1.4;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--ds-text);
-}
-
-.mail-row-meta {
-  font-size: 12px;
-  color: var(--ds-text-secondary, #64748B);
-  margin-top: 2px;
-  display: flex;
-  gap: 8px;
-  align-items: center;
+  color: var(--ds-text-secondary);
 }
 
 .mail-row-time {
   flex-shrink: 0;
   font-size: 11px;
+  color: var(--ds-text-secondary);
   opacity: 0.7;
 }
 
