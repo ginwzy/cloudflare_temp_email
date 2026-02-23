@@ -39,11 +39,12 @@ const { t } = useI18n({
             docAuthDesc: 'Add the following header to all requests:',
             docEndpoints: 'Endpoints',
             docCreateAddr: '1. Create Temp Address',
-            docListMails: '2. List Mails',
-            docGetMail: '3. Get Mail Detail',
-            docExtract: '4. Get AI Extract Result',
+            docListAddr: '2. List Addresses',
+            docListMails: '3. List Mails',
+            docGetMail: '4. Get Mail Detail',
+            docExtract: '5. Get AI Extract Result',
             docNotes: 'Notes',
-            docNote1: 'The jwt returned from address creation is required for all subsequent mail queries',
+            docNote1: 'One API key can create and manage multiple addresses',
             docNote2: 'Each API call consumes 1 usage quota regardless of the endpoint',
             docNote3: 'When usage reaches the limit, the API returns HTTP 429',
             docNote4: 'Replace YOUR_DOMAIN with your actual deployment domain',
@@ -77,11 +78,12 @@ const { t } = useI18n({
             docAuthDesc: '在所有请求中添加以下请求头：',
             docEndpoints: '接口列表',
             docCreateAddr: '1. 创建临时邮箱地址',
-            docListMails: '2. 查询邮件列表',
-            docGetMail: '3. 获取邮件详情',
-            docExtract: '4. 获取 AI 提取结果',
+            docListAddr: '2. 查看地址列表',
+            docListMails: '3. 查询邮件列表',
+            docGetMail: '4. 获取邮件详情',
+            docExtract: '5. 获取 AI 提取结果',
             docNotes: '注意事项',
-            docNote1: '创建地址时返回的 jwt 是后续所有邮件查询的凭证',
+            docNote1: '一个 API Key 可以创建和管理多个地址',
             docNote2: '每次 API 调用消耗 1 次配额，不区分接口',
             docNote3: '用量达到上限后，API 将返回 HTTP 429',
             docNote4: '请将 YOUR_DOMAIN 替换为你的实际部署域名',
@@ -230,18 +232,22 @@ onMounted(fetchData)
   -H "Content-Type: application/json" \
   -d '{"name":"test","domain":"example.com"}'
 
-# Response: {"address":"test@example.com","jwt":"eyJ..."}</pre>
+# Response: {"address":"test@example.com"}</pre>
+
+                    <n-text strong>{{ t('docListAddr') }}</n-text>
+                    <pre class="code-block">curl "https://YOUR_DOMAIN/open_api/api/addresses?limit=20&amp;offset=0" \
+  -H "x-api-key: sk-xxx"</pre>
 
                     <n-text strong>{{ t('docListMails') }}</n-text>
-                    <pre class="code-block">curl "https://YOUR_DOMAIN/open_api/api/mails?jwt=JWT_TOKEN&amp;limit=20&amp;offset=0" \
+                    <pre class="code-block">curl "https://YOUR_DOMAIN/open_api/api/mails?address=test@example.com&amp;limit=20&amp;offset=0" \
   -H "x-api-key: sk-xxx"</pre>
 
                     <n-text strong>{{ t('docGetMail') }}</n-text>
-                    <pre class="code-block">curl "https://YOUR_DOMAIN/open_api/api/mail/MAIL_ID?jwt=JWT_TOKEN" \
+                    <pre class="code-block">curl "https://YOUR_DOMAIN/open_api/api/mail/MAIL_ID?address=test@example.com" \
   -H "x-api-key: sk-xxx"</pre>
 
                     <n-text strong>{{ t('docExtract') }}</n-text>
-                    <pre class="code-block">curl "https://YOUR_DOMAIN/open_api/api/address/extract/MAIL_ID?jwt=JWT_TOKEN" \
+                    <pre class="code-block">curl "https://YOUR_DOMAIN/open_api/api/address/extract/MAIL_ID?address=test@example.com" \
   -H "x-api-key: sk-xxx"
 
 # Response: {"ai_extract": {...}}</pre>

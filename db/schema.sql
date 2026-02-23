@@ -118,3 +118,30 @@ CREATE TABLE IF NOT EXISTS user_passkeys (
 CREATE INDEX IF NOT EXISTS idx_user_passkeys_user_id ON user_passkeys(user_id);
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_user_passkeys_user_id_passkey_id ON user_passkeys(user_id, passkey_id);
+
+CREATE TABLE IF NOT EXISTS api_keys (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    api_key TEXT UNIQUE NOT NULL,
+    max_calls INTEGER DEFAULT 1000,
+    used_calls INTEGER DEFAULT 0,
+    is_active INTEGER DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_api_keys_api_key ON api_keys(api_key);
+
+CREATE TABLE IF NOT EXISTS api_key_addresses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    key_id INTEGER NOT NULL,
+    address TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (key_id) REFERENCES api_keys(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_api_key_addresses_key_id ON api_key_addresses(key_id);
+
+CREATE INDEX IF NOT EXISTS idx_api_key_addresses_address ON api_key_addresses(address);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_api_key_addresses_key_address ON api_key_addresses(key_id, address);
