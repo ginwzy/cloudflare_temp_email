@@ -107,10 +107,8 @@ const stats = ref({
 const recentMails = ref([])
 const dbInfo = ref(null)
 const workerConfig = ref(null)
-const loadingMails = ref(true)
-const loadingSystem = ref(true)
 const dailyData = ref([])
-const loadingCharts = ref(true)
+const loading = ref(true)
 
 const chartTextColor = computed(() => isDark.value ? '#94A3B8' : '#64748B')
 const chartBorderColor = computed(() => isDark.value ? '#334155' : '#E2E8F0')
@@ -220,7 +218,10 @@ const navigate = (path) => router.push(getRouterPathWithLang(path, locale.value)
 const relativeTime = (dateStr) => {
   if (!dateStr) return ''
   const now = Date.now()
-  const date = new Date(dateStr.includes('UTC') ? dateStr : dateStr + ' UTC')
+  // Normalize "2025-02-20 12:34:56" → "2025-02-20T12:34:56Z"
+  const normalized = dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T') + 'Z'
+  const date = new Date(normalized)
+  if (isNaN(date.getTime())) return ''
   const diff = Math.floor((now - date.getTime()) / 1000)
   if (diff < 60) return t('justNow')
   if (diff < 3600) return t('minutesAgo', { n: Math.floor(diff / 60) })
@@ -241,27 +242,23 @@ const parseSubject = (mail) => {
 
 onMounted(async () => {
   try {
-    const data = await api.fetch('/admin/statistics')
-    Object.assign(stats.value, data)
-  } catch (e) { message.error(e.message || 'error') }
-
-  try {
-    const data = await api.fetch('/admin/mails?limit=5&offset=0')
-    recentMails.value = data?.results || []
-  } catch {} finally { loadingMails.value = false }
-
-  try {
-    const [db, config] = await Promise.all([
-      api.fetch('/admin/db_version'),
-      api.fetch('/admin/worker/configs'),
+    const [statsData, mailsData, db, config, daily] = await Promise.all([
+      api.fetch('/admin/statistics'),
+      api.fetch('/admin/mails?limit=5&offset=0').catch(() => null),
+      api.fetch('/admin/db_version').catch(() => null),
+      api.fetch('/admin/worker/configs').catch(() => null),
+      api.fetch('/admin/statistics/daily').catch(() => []),
     ])
+    Object.assign(stats.value, statsData)
+    recentMails.value = mailsData?.results || []
     dbInfo.value = db
     workerConfig.value = config
-  } catch {} finally { loadingSystem.value = false }
-
-  try {
-    dailyData.value = await api.fetch('/admin/statistics/daily')
-  } catch {} finally { loadingCharts.value = false }
+    dailyData.value = daily || []
+  } catch (e) {
+    message.error(e.message || 'error')
+  } finally {
+    loading.value = false
+  }
 })
 </script>
 
@@ -297,7 +294,7 @@ onMounted(async () => {
         <div class="panel-header">
           <span class="panel-title">{{ t('mailActivity') }}</span>
         </div>
-        <div v-if="loadingCharts" class="panel-loading"><n-spin size="small" /></div>
+        <div v-if="loading" class="panel-loading"><n-spin size="small" /></div>
         <div v-else class="chart-wrap">
           <v-chart :option="barChartOption" autoresize />
         </div>
@@ -306,7 +303,7 @@ onMounted(async () => {
         <div class="panel-header">
           <span class="panel-title">{{ t('addressActivity') }}</span>
         </div>
-        <div v-if="loadingCharts" class="panel-loading"><n-spin size="small" /></div>
+        <div v-if="loading" class="panel-loading"><n-spin size="small" /></div>
         <div v-else class="chart-wrap">
           <v-chart :option="donutChartOption" autoresize />
         </div>
@@ -321,7 +318,7 @@ onMounted(async () => {
           <span class="panel-title">{{ t('recentEmails') }}</span>
           <span class="panel-count" v-if="recentMails.length">{{ recentMails.length }}</span>
         </div>
-        <div v-if="loadingMails" class="panel-loading"><n-spin size="small" /></div>
+        <div v-if="loading" class="panel-loading"><n-spin size="small" /></div>
         <div v-else-if="!recentMails.length" class="empty-state">
           <svg class="empty-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="8" y="16" width="48" height="36" rx="4" stroke="currentColor" stroke-width="2" opacity="0.25"/>
@@ -348,7 +345,7 @@ onMounted(async () => {
         <div class="panel-header">
           <span class="panel-title">{{ t('systemInfo') }}</span>
         </div>
-        <div v-if="loadingSystem" class="panel-loading"><n-spin size="small" /></div>
+        <div v-if="loading" class="panel-loading"><n-spin size="small" /></div>
         <div v-else class="info-list">
           <template v-if="dbInfo">
             <div class="info-row">
