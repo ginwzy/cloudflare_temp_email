@@ -38,7 +38,7 @@ const apiFetch = async (path, options = {}) => {
                 'Content-Type': 'application/json',
             },
         });
-        if (response.status === 401 && path.startsWith("/admin")) {
+        if (response.status === 401 && path.startsWith("/admin") && !userSettings.value.is_admin) {
             showAdminAuth.value = true;
         }
         if (response.status === 401 && openSettings.value.needAuth) {
