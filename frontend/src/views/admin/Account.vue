@@ -2,19 +2,22 @@
 import { ref, h, onMounted, watch, computed } from 'vue';
 import { NBadge, useMessage } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 
 import { useGlobalState } from '../../store'
 import { api } from '../../api'
+import { getRouterPathWithLang } from '../../utils'
 import { NButton, NMenu } from 'naive-ui';
 import { MenuFilled } from '@vicons/material'
 
 const {
-    loading, adminTab, openSettings,
+    loading, openSettings,
     adminMailTabAddress, adminSendBoxTabAddress
 } = useGlobalState()
 const message = useMessage()
+const router = useRouter()
 
-const { t } = useI18n({
+const { t, locale } = useI18n({
     messages: {
         en: {
             name: 'Name',
@@ -335,7 +338,7 @@ const columns = [
                     onClick: () => {
                         if (row.mail_count > 0) {
                             adminMailTabAddress.value = row.name;
-                            adminTab.value = "mails";
+                            router.push(getRouterPathWithLang('/admin/emails', locale.value));
                         }
                     }
                 },
@@ -361,7 +364,7 @@ const columns = [
                     onClick: () => {
                         if (row.send_count > 0) {
                             adminSendBoxTabAddress.value = row.name;
-                            adminTab.value = "sendBox";
+                            router.push(getRouterPathWithLang('/admin/emails', locale.value));
                         }
                     }
                 },
@@ -405,7 +408,7 @@ const columns = [
                                             text: true,
                                             onClick: () => {
                                                 adminMailTabAddress.value = row.name;
-                                                adminTab.value = "mails";
+                                                router.push(getRouterPathWithLang('/admin/emails', locale.value));
                                             }
                                         },
                                         { default: () => t('viewMails') }
@@ -418,7 +421,7 @@ const columns = [
                                             text: true,
                                             onClick: () => {
                                                 adminSendBoxTabAddress.value = row.name;
-                                                adminTab.value = "sendBox";
+                                                router.push(getRouterPathWithLang('/admin/emails', locale.value));
                                             }
                                         },
                                         { default: () => t('viewSendBox') }

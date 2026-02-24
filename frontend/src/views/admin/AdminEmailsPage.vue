@@ -7,7 +7,7 @@ import MailsUnknow from './MailsUnknow.vue'
 import SendBox from './SendBox.vue'
 import MailWebhook from './MailWebhook.vue'
 
-const { loading } = useGlobalState()
+const { loading, adminSendBoxTabAddress } = useGlobalState()
 
 const SendMail = defineAsyncComponent(() => {
   loading.value = true
@@ -21,7 +21,7 @@ const { t } = useI18n({
   }
 })
 
-const tab = ref('mails')
+const tab = ref(adminSendBoxTabAddress.value ? 'sent' : 'mails')
 </script>
 
 <template>
