@@ -40,14 +40,21 @@ const verifyAddressOwnership = async (c: any, address: string): Promise<boolean>
 
 // Create temp address
 app.post('/open_api/api/address/create', async (c) => {
-    const { name, domain } = await c.req.json();
+    const { name, domain, tags } = await c.req.json();
     if (!name) return c.text("Name is required", 400);
+    if (tags !== undefined && !Array.isArray(tags)) {
+        return c.text("Tags must be an array of strings", 400);
+    }
+    if (tags && tags.some((t: any) => typeof t !== 'string')) {
+        return c.text("Tags must be an array of strings", 400);
+    }
     try {
         const res = await newAddress(c, {
             name, domain, enablePrefix: false,
             checkLengthByConfig: false, addressPrefix: null,
             checkAllowDomains: true, enableCheckNameRegex: false,
-            sourceMeta: 'api_key'
+            sourceMeta: 'api_key',
+            tags: tags || null,
         });
         // Link address to this API key
         const keyId = c.get('apiKeyId');
@@ -116,6 +123,34 @@ app.get('/open_api/api/address/extract/:mail_id', async (c) => {
     } catch {
         return c.json({ ai_extract: null });
     }
+});
+
+// Delete address owned by this API key (cascade delete)
+app.delete('/open_api/api/address/:address', async (c) => {
+    const address = decodeURIComponent(c.req.param('address'));
+    if (!address) return c.text("Address is required", 400);
+
+    const isOwner = await verifyAddressOwnership(c, address);
+    if (!isOwner) return c.text("Address not found or not owned by this API key", 403);
+
+    const addr = await c.env.DB.prepare(
+        `SELECT id FROM address WHERE name = ?`
+    ).bind(address).first<{ id: number }>();
+    if (!addr) return c.text("Address not found", 404);
+
+    // Cascade delete (same pattern as admin delete)
+    await c.env.DB.prepare(`DELETE FROM raw_mails WHERE address = ?`).bind(address).run();
+    await c.env.DB.prepare(`DELETE FROM sendbox WHERE address = ?`).bind(address).run();
+    await c.env.DB.prepare(`DELETE FROM address_sender WHERE address = ?`).bind(address).run();
+    await c.env.DB.prepare(`DELETE FROM auto_reply_mails WHERE address = ?`).bind(address).run();
+    await c.env.DB.prepare(`DELETE FROM users_address WHERE address_id = ?`).bind(addr.id).run();
+    await c.env.DB.prepare(`DELETE FROM api_key_addresses WHERE address = ?`).bind(address).run();
+    const { success } = await c.env.DB.prepare(
+        `DELETE FROM address WHERE name = ?`
+    ).bind(address).run();
+
+    if (!success) return c.text("Failed to delete address", 500);
+    return c.json({ success: true });
 });
 
 export const api = app;

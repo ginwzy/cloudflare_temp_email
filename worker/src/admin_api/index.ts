@@ -22,30 +22,48 @@ import { EmailRuleSettings } from '../models'
 export const api = new Hono<HonoCustomType>()
 
 api.get('/admin/address', async (c) => {
-    const { limit, offset, query } = c.req.query();
+    const { limit, offset, query, tag, source_meta, date_from, date_to } = c.req.query();
+
+    const conditions: string[] = [];
+    const params: string[] = [];
+
     if (query) {
-        return await handleListQuery(c,
-            `SELECT a.*,`
-            + ` (SELECT COUNT(*) FROM raw_mails WHERE address = a.name) AS mail_count,`
-            + ` (SELECT COUNT(*) FROM sendbox WHERE address = a.name) AS send_count`
-            + ` FROM address a`
-            + ` where name like ?`,
-            `SELECT count(*) as count FROM address where name like ?`,
-            [`%${query}%`], limit, offset
-        );
+        conditions.push(`a.name like ?`);
+        params.push(`%${query}%`);
     }
-    return await handleListQuery(c,
-        `SELECT a.*,`
+    if (tag) {
+        conditions.push(`EXISTS (SELECT 1 FROM json_each(a.tags) WHERE json_each.value = ?)`);
+        params.push(tag);
+    }
+    if (source_meta) {
+        conditions.push(`a.source_meta = ?`);
+        params.push(source_meta);
+    }
+    if (date_from) {
+        conditions.push(`a.created_at >= ?`);
+        params.push(date_from);
+    }
+    if (date_to) {
+        conditions.push(`a.created_at <= ?`);
+        params.push(date_to + ' 23:59:59');
+    }
+
+    const whereClause = conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
+    const selectBase = `SELECT a.*,`
         + ` (SELECT COUNT(*) FROM raw_mails WHERE address = a.name) AS mail_count,`
         + ` (SELECT COUNT(*) FROM sendbox WHERE address = a.name) AS send_count`
-        + ` FROM address a`,
-        `SELECT count(*) as count FROM address`,
-        [], limit, offset
+        + ` FROM address a`;
+    const countBase = `SELECT count(*) as count FROM address a`;
+
+    return await handleListQuery(c,
+        selectBase + whereClause,
+        countBase + whereClause,
+        params, limit, offset
     );
 })
 
 api.post('/admin/new_address', async (c) => {
-    const { name, domain, enablePrefix } = await c.req.json();
+    const { name, domain, enablePrefix, tags } = await c.req.json();
     const msgs = i18n.getMessagesbyContext(c);
     if (!name) {
         return c.text(msgs.RequiredFieldMsg, 400)
@@ -57,7 +75,8 @@ api.post('/admin/new_address', async (c) => {
             addressPrefix: null,
             checkAllowDomains: false,
             enableCheckNameRegex: false,
-            sourceMeta: 'admin'
+            sourceMeta: 'admin',
+            tags: tags || null,
         });
 
         return c.json(res);
@@ -169,6 +188,119 @@ api.post('/admin/address/:id/reset_password', async (c) => {
     }
 
     return c.json({ success: true });
+})
+
+// Set tags for a single address
+api.post('/admin/address/:id/tags', async (c) => {
+    const msgs = i18n.getMessagesbyContext(c);
+    const { id } = c.req.param();
+    const { tags } = await c.req.json();
+
+    if (!Array.isArray(tags)) {
+        return c.text("Tags must be an array", 400);
+    }
+    if (tags.some((t: any) => typeof t !== 'string' || t.trim().length === 0)) {
+        return c.text("Tags must be non-empty strings", 400);
+    }
+
+    const tagsJson = JSON.stringify(tags.map((t: string) => t.trim()));
+    const { success } = await c.env.DB.prepare(
+        `UPDATE address SET tags = ?, updated_at = datetime('now') WHERE id = ?`
+    ).bind(tagsJson, id).run();
+
+    if (!success) {
+        return c.text(msgs.OperationFailedMsg, 500);
+    }
+    return c.json({ success: true });
+})
+
+// Batch tag management
+api.post('/admin/batch_tags', async (c) => {
+    const { ids, action, tags } = await c.req.json();
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+        return c.text("ids must be a non-empty array", 400);
+    }
+    if (!['add', 'remove', 'set'].includes(action)) {
+        return c.text("action must be 'add', 'remove', or 'set'", 400);
+    }
+    if (!Array.isArray(tags)) {
+        return c.text("tags must be an array", 400);
+    }
+
+    const results = { success: 0, failed: 0 };
+
+    for (const id of ids) {
+        try {
+            if (action === 'set') {
+                await c.env.DB.prepare(
+                    `UPDATE address SET tags = ?, updated_at = datetime('now') WHERE id = ?`
+                ).bind(JSON.stringify(tags), id).run();
+            } else {
+                const row = await c.env.DB.prepare(
+                    `SELECT tags FROM address WHERE id = ?`
+                ).bind(id).first<{ tags: string }>();
+
+                let currentTags: string[] = [];
+                try {
+                    currentTags = JSON.parse(row?.tags || '[]');
+                } catch { currentTags = []; }
+
+                let newTags: string[];
+                if (action === 'add') {
+                    const tagSet = new Set([...currentTags, ...tags]);
+                    newTags = Array.from(tagSet);
+                } else {
+                    newTags = currentTags.filter(t => !tags.includes(t));
+                }
+
+                await c.env.DB.prepare(
+                    `UPDATE address SET tags = ?, updated_at = datetime('now') WHERE id = ?`
+                ).bind(JSON.stringify(newTags), id).run();
+            }
+            results.success++;
+        } catch (e) {
+            console.error(`batch_tags failed for id ${id}:`, e);
+            results.failed++;
+        }
+    }
+
+    return c.json(results);
+})
+
+// Tag statistics
+api.get('/admin/tag_statistics', async (c) => {
+    const { results: tagCounts } = await c.env.DB.prepare(
+        `SELECT je.value as tag, COUNT(DISTINCT a.id) as address_count`
+        + ` FROM address a, json_each(a.tags) je`
+        + ` GROUP BY je.value`
+        + ` ORDER BY address_count DESC`
+        + ` LIMIT 100`
+    ).all();
+
+    const { results: tagMailCounts } = await c.env.DB.prepare(
+        `SELECT je.value as tag, COUNT(rm.id) as mail_count`
+        + ` FROM address a, json_each(a.tags) je`
+        + ` LEFT JOIN raw_mails rm ON rm.address = a.name`
+        + ` GROUP BY je.value`
+        + ` ORDER BY mail_count DESC`
+        + ` LIMIT 100`
+    ).all();
+
+    const { results: sourceMetas } = await c.env.DB.prepare(
+        `SELECT DISTINCT source_meta FROM address WHERE source_meta IS NOT NULL ORDER BY source_meta`
+    ).all();
+
+    const { results: allTags } = await c.env.DB.prepare(
+        `SELECT DISTINCT je.value as tag FROM address a, json_each(a.tags) je ORDER BY tag`
+    ).all();
+
+    return c.json({
+        tagCounts: tagCounts || [],
+        tagMailCounts: tagMailCounts || [],
+        sourceMetas: (sourceMetas || []).map((r: any) => r.source_meta),
+        allTags: (allTags || []).map((r: any) => r.tag),
+    });
 })
 
 // mail api

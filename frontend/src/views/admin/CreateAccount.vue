@@ -22,6 +22,8 @@ const { t } = useI18n({
             addressCredentialTip: 'Please copy the Mail Address Credential and you can use it to login to your email account.',
             addressPassword: 'Address Password',
             linkWithAddressCredential: 'Open to auto login email link',
+            tags: 'Tags',
+            tagsTip: 'Press Enter to add tags (optional)',
         },
         zh: {
             address: '地址',
@@ -33,6 +35,8 @@ const { t } = useI18n({
             addressCredentialTip: '请复制邮箱地址凭证，你可以使用它登录你的邮箱。',
             addressPassword: '地址密码',
             linkWithAddressCredential: '打开即可自动登录邮箱的链接',
+            tags: '标签',
+            tagsTip: '按回车添加标签（可选）',
         }
     }
 });
@@ -40,6 +44,7 @@ const { t } = useI18n({
 const enablePrefix = ref(true)
 const emailName = ref("")
 const emailDomain = ref("")
+const emailTags = ref([])
 const showReultModal = ref(false)
 const result = ref("")
 const addressPassword = ref("")
@@ -57,6 +62,7 @@ const newEmail = async () => {
                 enablePrefix: enablePrefix.value,
                 name: emailName.value,
                 domain: emailDomain.value,
+                tags: emailTags.value.length > 0 ? emailTags.value : undefined,
             })
         })
         result.value = res["jwt"];
@@ -118,6 +124,9 @@ onMounted(async () => {
                     <n-select v-model:value="emailDomain" :consistent-menu-width="false"
                         :options="openSettings.domains" />
                 </n-input-group>
+            </n-form-item-row>
+            <n-form-item-row :label="t('tags')">
+                <n-dynamic-tags v-model:value="emailTags" />
             </n-form-item-row>
             <n-button @click="newEmail" type="primary" block :loading="loading">
                 {{ t('creatNewEmail') }}

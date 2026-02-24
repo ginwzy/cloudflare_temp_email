@@ -7,7 +7,7 @@ import { useRouter } from 'vue-router'
 import { useGlobalState } from '../../store'
 import { api } from '../../api'
 import { getRouterPathWithLang } from '../../utils'
-import { NButton, NMenu } from 'naive-ui';
+import { NButton, NMenu, NTag, NSpace } from 'naive-ui';
 import { MenuFilled } from '@vicons/material'
 
 const {
@@ -56,6 +56,18 @@ const { t, locale } = useI18n({
             multiClearInboxTip: 'Are you sure to clear inbox for selected addresses?',
             multiClearSentItems: 'Multi Clear Sent Items',
             multiClearSentItemsTip: 'Are you sure to clear sent items for selected addresses?',
+            tags: 'Tags',
+            filterByTag: 'Filter by Tag',
+            filterBySource: 'Filter by Source',
+            dateFrom: 'Date From',
+            dateTo: 'Date To',
+            clearFilters: 'Clear Filters',
+            batchAddTags: 'Batch Add Tags',
+            batchRemoveTags: 'Batch Remove Tags',
+            batchSetTags: 'Batch Set Tags',
+            editTags: 'Edit Tags',
+            noTags: 'No tags',
+            tagStatistics: 'Tag Statistics',
         },
         zh: {
             name: '名称',
@@ -94,6 +106,18 @@ const { t, locale } = useI18n({
             multiClearInboxTip: '确定要清空选中邮箱的收件箱吗？',
             multiClearSentItems: '批量清空发件箱',
             multiClearSentItemsTip: '确定要清空选中邮箱的发件箱吗？',
+            tags: '标签',
+            filterByTag: '按标签筛选',
+            filterBySource: '按来源筛选',
+            dateFrom: '开始日期',
+            dateTo: '结束日期',
+            clearFilters: '清除筛选',
+            batchAddTags: '批量添加标签',
+            batchRemoveTags: '批量移除标签',
+            batchSetTags: '批量设置标签',
+            editTags: '编辑标签',
+            noTags: '无标签',
+            tagStatistics: '标签统计',
         }
     }
 });
@@ -118,10 +142,44 @@ const showMultiActionBar = computed(() => checkedRowKeys.value.length > 0);
 
 const addressQuery = ref("")
 
+// Filter state
+const tagFilter = ref(null)
+const sourceMetaFilter = ref(null)
+const dateFromFilter = ref(null)
+const dateToFilter = ref(null)
+const availableTags = ref([])
+const availableSourceMetas = ref([])
+const tagStats = ref([])
+
+// Tag management modal state
+const showTagModal = ref(false)
+const tagModalAction = ref('add')
+const tagModalTags = ref([])
+
+// Single address tag edit
+const showEditTagsModal = ref(false)
+const editTagsAddressId = ref(0)
+const editTagsValue = ref([])
+
 const data = ref([])
 const count = ref(0)
 const page = ref(1)
 const pageSize = ref(20)
+
+// Dynamic table width: base columns ~900px, tags column grows with content
+const tableScrollX = computed(() => {
+    const baseWidth = 960
+    let maxTagsWidth = 60 // minimum for "无标签"
+    for (const row of data.value) {
+        try {
+            const tags = JSON.parse(row.tags || '[]')
+            // ~55px per tag (small NTag with short text)
+            const w = tags.length * 55 + 16
+            if (w > maxTagsWidth) maxTagsWidth = w
+        } catch { /* ignore */ }
+    }
+    return baseWidth + maxTagsWidth
+})
 const showDeleteAccount = ref(false)
 const showClearInbox = ref(false)
 const showClearSentItems = ref(false)
@@ -285,15 +343,87 @@ const multiActionClearSentItems = async () => {
     });
 }
 
+const executeBatchTagAction = async () => {
+    if (checkedRowKeys.value.length === 0) {
+        message.error(t('pleaseSelectAddress'));
+        return;
+    }
+    if (tagModalTags.value.length === 0) {
+        return;
+    }
+    try {
+        loading.value = true;
+        const res = await api.fetch('/admin/batch_tags', {
+            method: 'POST',
+            body: JSON.stringify({
+                ids: checkedRowKeys.value,
+                action: tagModalAction.value,
+                tags: tagModalTags.value,
+            })
+        });
+        message.success(`${t('success')} (${res.success}/${res.success + res.failed})`);
+        showTagModal.value = false;
+        await fetchData();
+        await fetchFilterOptions();
+    } catch (error) {
+        message.error(error.message || 'error');
+    } finally {
+        loading.value = false;
+    }
+}
+
+const saveEditTags = async () => {
+    try {
+        loading.value = true;
+        await api.fetch(`/admin/address/${editTagsAddressId.value}/tags`, {
+            method: 'POST',
+            body: JSON.stringify({ tags: editTagsValue.value })
+        });
+        message.success(t('success'));
+        showEditTagsModal.value = false;
+        await fetchData();
+        await fetchFilterOptions();
+    } catch (error) {
+        message.error(error.message || 'error');
+    } finally {
+        loading.value = false;
+    }
+}
+
+const fetchFilterOptions = async () => {
+    try {
+        const res = await api.fetch('/admin/tag_statistics');
+        availableTags.value = (res.allTags || []).map(tag => ({ label: tag, value: tag }));
+        availableSourceMetas.value = (res.sourceMetas || []).map(s => ({ label: s, value: s }));
+
+        // Merge tag counts with mail counts for statistics display
+        const mailCountMap = {};
+        for (const item of (res.tagMailCounts || [])) {
+            mailCountMap[item.tag] = item.mail_count;
+        }
+        tagStats.value = (res.tagCounts || []).map(item => ({
+            tag: item.tag,
+            address_count: item.address_count,
+            mail_count: mailCountMap[item.tag] || 0,
+        }));
+    } catch (error) {
+        console.error('Failed to fetch filter options:', error);
+    }
+}
+
 const fetchData = async () => {
     try {
         addressQuery.value = addressQuery.value.trim()
-        const { results, count: addressCount } = await api.fetch(
-            `/admin/address`
+        let url = `/admin/address`
             + `?limit=${pageSize.value}`
             + `&offset=${(page.value - 1) * pageSize.value}`
-            + (addressQuery.value ? `&query=${addressQuery.value}` : "")
-        );
+        if (addressQuery.value) url += `&query=${addressQuery.value}`
+        if (tagFilter.value) url += `&tag=${encodeURIComponent(tagFilter.value)}`
+        if (sourceMetaFilter.value) url += `&source_meta=${encodeURIComponent(sourceMetaFilter.value)}`
+        if (dateFromFilter.value) url += `&date_from=${dateFromFilter.value}`
+        if (dateToFilter.value) url += `&date_to=${dateToFilter.value}`
+
+        const { results, count: addressCount } = await api.fetch(url);
         data.value = results;
         if (addressCount > 0) {
             count.value = addressCount;
@@ -306,31 +436,60 @@ const fetchData = async () => {
 
 const columns = [
     {
-        type: 'selection'
+        type: 'selection',
+        width: 40
     },
     {
         title: "ID",
-        key: "id"
+        key: "id",
+        width: 60
     },
     {
         title: t('name'),
-        key: "name"
+        key: "name",
+        width: 220,
+        ellipsis: { tooltip: true }
     },
     {
         title: t('created_at'),
-        key: "created_at"
+        key: "created_at",
+        width: 150
     },
     {
         title: t('updated_at'),
-        key: "updated_at"
+        key: "updated_at",
+        width: 150
     },
     {
         title: t('source_meta'),
-        key: "source_meta"
+        key: "source_meta",
+        width: 70
+    },
+    {
+        title: t('tags'),
+        key: "tags",
+        render(row) {
+            let tags = [];
+            try {
+                tags = JSON.parse(row.tags || '[]');
+            } catch { tags = []; }
+            if (tags.length === 0) {
+                return h('span', { style: 'color: #999; font-size: 12px;' }, t('noTags'));
+            }
+            return h('div', { style: 'display: flex; flex-wrap: nowrap; gap: 4px;' },
+                tags.map(tag => h(NTag, {
+                    size: 'small',
+                    type: 'info',
+                    round: true,
+                    bordered: false,
+                }, () => tag))
+            );
+        }
     },
     {
         title: t('mail_count'),
         key: "mail_count",
+        width: 100,
         render(row) {
             return h(NButton,
                 {
@@ -357,6 +516,7 @@ const columns = [
     {
         title: t('send_count'),
         key: "send_count",
+        width: 100,
         render(row) {
             return h(NButton,
                 {
@@ -381,8 +541,9 @@ const columns = [
         }
     },
     {
-        title: t('actions'),
+        title: '',
         key: 'actions',
+        width: 70,
         render(row) {
             return h('div', [
                 h(NMenu, {
@@ -472,6 +633,21 @@ const columns = [
                                         {
                                             text: true,
                                             onClick: () => {
+                                                editTagsAddressId.value = row.id;
+                                                try {
+                                                    editTagsValue.value = JSON.parse(row.tags || '[]');
+                                                } catch { editTagsValue.value = []; }
+                                                showEditTagsModal.value = true;
+                                            }
+                                        },
+                                        { default: () => t('editTags') }
+                                    ),
+                                },
+                                {
+                                    label: () => h(NButton,
+                                        {
+                                            text: true,
+                                            onClick: () => {
                                                 curDeleteAddressId.value = row.id;
                                                 showDeleteAccount.value = true;
                                             }
@@ -493,6 +669,7 @@ watch([page, pageSize], async () => {
 })
 
 onMounted(async () => {
+    await fetchFilterOptions()
     await fetchData()
 })
 </script>
@@ -555,6 +732,42 @@ onMounted(async () => {
             </n-button>
         </n-input-group>
 
+        <!-- Advanced filters -->
+        <n-space style="margin-bottom: 10px;" align="center" :wrap="true">
+            <n-select v-model:value="tagFilter" :options="availableTags" :placeholder="t('filterByTag')" clearable
+                filterable style="width: 180px;" @update:value="fetchData" />
+            <n-select v-model:value="sourceMetaFilter" :options="availableSourceMetas"
+                :placeholder="t('filterBySource')" clearable style="width: 180px;" @update:value="fetchData" />
+            <n-date-picker v-model:formatted-value="dateFromFilter" type="date" :placeholder="t('dateFrom')" clearable
+                value-format="yyyy-MM-dd" style="width: 160px;" @update:value="fetchData" />
+            <n-date-picker v-model:formatted-value="dateToFilter" type="date" :placeholder="t('dateTo')" clearable
+                value-format="yyyy-MM-dd" style="width: 160px;" @update:value="fetchData" />
+            <n-button
+                @click="() => { tagFilter = null; sourceMetaFilter = null; dateFromFilter = null; dateToFilter = null; fetchData(); }"
+                tertiary size="small">
+                {{ t('clearFilters') }}
+            </n-button>
+        </n-space>
+
+        <!-- Tag Statistics -->
+        <n-collapse style="margin-bottom: 12px;" v-if="tagStats.length > 0">
+            <n-collapse-item :title="t('tagStatistics')" name="tagStats">
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    <n-card v-for="stat in tagStats" :key="stat.tag" size="small"
+                        style="min-width: 140px; cursor: pointer;"
+                        @click="() => { tagFilter = stat.tag; fetchData(); }">
+                        <n-statistic :label="stat.tag" :value="stat.address_count">
+                            <template #suffix>
+                                <n-text depth="3" style="font-size: 12px;">
+                                    ({{ stat.mail_count || 0 }} mails)
+                                </n-text>
+                            </template>
+                        </n-statistic>
+                    </n-card>
+                </div>
+            </n-collapse-item>
+        </n-collapse>
+
         <n-space v-if="showMultiActionBar" style="margin-bottom: 10px;">
             <n-button @click="multiActionSelectAll" tertiary>
                 {{ t('selectAll') }}
@@ -580,21 +793,33 @@ onMounted(async () => {
                 </template>
                 {{ t('multiClearSentItemsTip') }}
             </n-popconfirm>
+            <n-button tertiary type="info"
+                @click="() => { tagModalAction = 'add'; tagModalTags = []; showTagModal = true; }">
+                {{ t('batchAddTags') }}
+            </n-button>
+            <n-button tertiary type="warning"
+                @click="() => { tagModalAction = 'remove'; tagModalTags = []; showTagModal = true; }">
+                {{ t('batchRemoveTags') }}
+            </n-button>
+            <n-button tertiary
+                @click="() => { tagModalAction = 'set'; tagModalTags = []; showTagModal = true; }">
+                {{ t('batchSetTags') }}
+            </n-button>
             <n-tag type="info">
                 {{ t('selectedItems') }}: {{ selectedCount }}
             </n-tag>
         </n-space>
         <div style="overflow: auto;">
-            <div style="display: inline-block;">
+            <div :style="{ minWidth: tableScrollX + 'px' }">
                 <n-pagination v-model:page="page" v-model:page-size="pageSize" :item-count="count"
                     :page-sizes="[20, 50, 100]" show-size-picker>
                     <template #prefix="{ itemCount }">
                         {{ t('itemCount') }}: {{ itemCount }}
                     </template>
                 </n-pagination>
+                <n-data-table v-model:checked-row-keys="checkedRowKeys" :columns="columns" :data="data"
+                    :bordered="false" :row-key="row => row.id" embedded />
             </div>
-            <n-data-table v-model:checked-row-keys="checkedRowKeys" :columns="columns" :data="data" :bordered="false"
-                :row-key="row => row.id" embedded />
         </div>
 
         <!-- Multi-action progress modal -->
@@ -608,6 +833,27 @@ onMounted(async () => {
             </n-space>
         </n-modal>
 
+        <!-- Batch tag modal -->
+        <n-modal v-model:show="showTagModal" preset="dialog"
+            :title="tagModalAction === 'add' ? t('batchAddTags') : tagModalAction === 'remove' ? t('batchRemoveTags') : t('batchSetTags')">
+            <n-dynamic-tags v-model:value="tagModalTags" />
+            <template #action>
+                <n-button type="primary" @click="executeBatchTagAction" :loading="loading" size="small">
+                    {{ tagModalAction === 'add' ? t('batchAddTags') : tagModalAction === 'remove' ? t('batchRemoveTags') : t('batchSetTags') }}
+                </n-button>
+            </template>
+        </n-modal>
+
+        <!-- Edit tags for single address -->
+        <n-modal v-model:show="showEditTagsModal" preset="dialog" :title="t('editTags')">
+            <n-dynamic-tags v-model:value="editTagsValue" />
+            <template #action>
+                <n-button type="primary" @click="saveEditTags" :loading="loading" size="small">
+                    {{ t('success') }}
+                </n-button>
+            </template>
+        </n-modal>
+
     </div>
 </template>
 
@@ -615,9 +861,5 @@ onMounted(async () => {
 .n-pagination {
     margin-top: 10px;
     margin-bottom: 10px;
-}
-
-.n-data-table {
-    min-width: 1000px;
 }
 </style>

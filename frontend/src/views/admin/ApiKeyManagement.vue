@@ -43,11 +43,14 @@ const { t } = useI18n({
             docListMails: '3. List Mails',
             docGetMail: '4. Get Mail Detail',
             docExtract: '5. Get AI Extract Result',
+            docDeleteAddr: '6. Delete Address',
             docNotes: 'Notes',
             docNote1: 'One API key can create and manage multiple addresses',
             docNote2: 'Each API call consumes 1 usage quota regardless of the endpoint',
             docNote3: 'When usage reaches the limit, the API returns HTTP 429',
             docNote4: 'Replace YOUR_DOMAIN with your actual deployment domain',
+            docNote5: 'Create address supports optional tags parameter (JSON array)',
+            docNote6: 'Deleting an address also deletes all associated mails and data',
         },
         zh: {
             title: 'API Key 管理',
@@ -82,11 +85,14 @@ const { t } = useI18n({
             docListMails: '3. 查询邮件列表',
             docGetMail: '4. 获取邮件详情',
             docExtract: '5. 获取 AI 提取结果',
+            docDeleteAddr: '6. 删除地址',
             docNotes: '注意事项',
             docNote1: '一个 API Key 可以创建和管理多个地址',
             docNote2: '每次 API 调用消耗 1 次配额，不区分接口',
             docNote3: '用量达到上限后，API 将返回 HTTP 429',
             docNote4: '请将 YOUR_DOMAIN 替换为你的实际部署域名',
+            docNote5: '创建地址时支持可选的 tags 参数（JSON 数组）',
+            docNote6: '删除地址时会同时删除所有关联的邮件和数据',
         }
     }
 });
@@ -230,7 +236,7 @@ onMounted(fetchData)
                     <pre class="code-block">curl -X POST https://YOUR_DOMAIN/open_api/api/address/create \
   -H "x-api-key: sk-xxx" \
   -H "Content-Type: application/json" \
-  -d '{"name":"test","domain":"example.com"}'
+  -d '{"name":"test","domain":"example.com","tags":["signup","twitter"]}'
 
 # Response: {"address":"test@example.com"}</pre>
 
@@ -252,12 +258,20 @@ onMounted(fetchData)
 
 # Response: {"ai_extract": {...}}</pre>
 
+                    <n-text strong>{{ t('docDeleteAddr') }}</n-text>
+                    <pre class="code-block">curl -X DELETE "https://YOUR_DOMAIN/open_api/api/address/test@example.com" \
+  -H "x-api-key: sk-xxx"
+
+# Response: {"success":true}</pre>
+
                     <n-h6 prefix="bar" style="margin-top: 16px;">{{ t('docNotes') }}</n-h6>
                     <ul class="doc-notes">
                         <li>{{ t('docNote1') }}</li>
                         <li>{{ t('docNote2') }}</li>
                         <li>{{ t('docNote3') }}</li>
                         <li>{{ t('docNote4') }}</li>
+                        <li>{{ t('docNote5') }}</li>
+                        <li>{{ t('docNote6') }}</li>
                     </ul>
                 </n-collapse-item>
             </n-collapse>

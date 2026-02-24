@@ -257,7 +257,7 @@ onMounted(async () => {
 }
 .admin-content-inner {
   padding: 24px;
-  max-width: 1200px;
+  max-width: 1300px;
   width: 100%;
   margin: 0 auto;
   box-sizing: border-box;

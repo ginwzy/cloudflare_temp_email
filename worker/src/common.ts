@@ -159,6 +159,7 @@ export const newAddress = async (
         checkAllowDomains = true,
         enableCheckNameRegex = true,
         sourceMeta = null,
+        tags = null,
     }: {
         name: string, domain: string | undefined | null,
         enablePrefix: boolean,
@@ -167,6 +168,7 @@ export const newAddress = async (
         checkAllowDomains?: boolean,
         enableCheckNameRegex?: boolean,
         sourceMeta?: string | undefined | null,
+        tags?: string[] | undefined | null,
     }
 ): Promise<{ address: string, jwt: string, password?: string | null }> => {
     const msgs = i18n.getMessagesbyContext(c);
@@ -218,18 +220,45 @@ export const newAddress = async (
     // create address
     name = name + "@" + domain;
     try {
-        // Try insert with source_meta field first
+        // Try insert with source_meta and tags fields first
+        const tagsJson = tags && Array.isArray(tags) ? JSON.stringify(tags) : '[]';
         const result = await c.env.DB.prepare(
-            `INSERT INTO address(name, source_meta) VALUES(?, ?)`
-        ).bind(name, sourceMeta).run();
+            `INSERT INTO address(name, source_meta, tags) VALUES(?, ?, ?)`
+        ).bind(name, sourceMeta, tagsJson).run();
         if (!result.success) {
             throw new Error(msgs.FailedCreateAddressMsg)
         }
         await updateAddressUpdatedAt(c, name);
     } catch (e) {
         const message = (e as Error).message;
-        // Fallback: source_meta field may not exist, try without it
-        if (message && message.includes("source_meta")) {
+        // Fallback: tags column may not exist, try without it
+        if (message && message.includes("tags")) {
+            try {
+                const result = await c.env.DB.prepare(
+                    `INSERT INTO address(name, source_meta) VALUES(?, ?)`
+                ).bind(name, sourceMeta).run();
+                if (!result.success) {
+                    throw new Error(msgs.FailedCreateAddressMsg)
+                }
+                await updateAddressUpdatedAt(c, name);
+            } catch (e2) {
+                const msg2 = (e2 as Error).message;
+                if (msg2 && msg2.includes("source_meta")) {
+                    const result = await c.env.DB.prepare(
+                        `INSERT INTO address(name) VALUES(?)`
+                    ).bind(name).run();
+                    if (!result.success) {
+                        throw new Error(msgs.FailedCreateAddressMsg)
+                    }
+                    await updateAddressUpdatedAt(c, name);
+                } else if (msg2 && msg2.includes("UNIQUE")) {
+                    throw new Error(msgs.AddressAlreadyExistsMsg)
+                } else {
+                    throw new Error(msgs.FailedCreateAddressMsg)
+                }
+            }
+        } else if (message && message.includes("source_meta")) {
+            // Fallback: source_meta field may not exist, try without it
             const result = await c.env.DB.prepare(
                 `INSERT INTO address(name) VALUES(?)`
             ).bind(name).run();

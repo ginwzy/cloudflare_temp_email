@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS address (
     name TEXT UNIQUE,
     password TEXT,
     source_meta TEXT,
+    tags TEXT DEFAULT '[]',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -199,6 +200,18 @@ export default {
             await c.env.DB.exec(`CREATE INDEX IF NOT EXISTS idx_api_key_addresses_key_id ON api_key_addresses(key_id);`);
             await c.env.DB.exec(`CREATE INDEX IF NOT EXISTS idx_api_key_addresses_address ON api_key_addresses(address);`);
             await c.env.DB.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_api_key_addresses_key_address ON api_key_addresses(key_id, address);`);
+        }
+        if (version && version <= "v0.0.7") {
+            // migration to v0.0.8: add tags column to address table
+            const tableInfo = await c.env.DB.prepare(
+                `PRAGMA table_info(address)`
+            ).all();
+            const hasTags = tableInfo.results?.some(
+                (col: any) => col.name === 'tags'
+            );
+            if (!hasTags) {
+                await c.env.DB.exec(`ALTER TABLE address ADD COLUMN tags TEXT DEFAULT '[]';`);
+            }
         }
         if (version != CONSTANTS.DB_VERSION) {
             const statements = DB_INIT_QUERIES.replace(/[\r\n]/g, "")
