@@ -210,13 +210,13 @@ onMounted(async () => {
     <div v-if="!isMobile" class="left">
       <div style="margin-bottom: 10px;">
         <n-space v-if="multiActionMode">
-          <n-button @click="multiActionModeClick(false)" tertiary>
+          <n-button @click="multiActionModeClick(false)" size="small" secondary>
             {{ t('cancelMultiAction') }}
           </n-button>
-          <n-button @click="multiActionSelectAll(true)" tertiary>
+          <n-button @click="multiActionSelectAll(true)" size="small" secondary type="primary">
             {{ t('selectAll') }}
           </n-button>
-          <n-button @click="multiActionSelectAll(false)" tertiary>
+          <n-button @click="multiActionSelectAll(false)" size="small" secondary>
             {{ t('unselectAll') }}
           </n-button>
           <n-popconfirm v-if="enableUserDeleteEmail" @positive-click="multiActionDeleteMail">

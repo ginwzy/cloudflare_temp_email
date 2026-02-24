@@ -74,6 +74,8 @@ const navigate = async (path) => {
   display: flex;
   gap: 24px;
   min-height: 400px;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 .settings-layout.mobile {
   flex-direction: column;

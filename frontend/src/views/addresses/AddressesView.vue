@@ -37,6 +37,7 @@ const { t } = useI18n({
 <style scoped>
 .addresses-page {
   max-width: 900px;
+  margin: 0 auto;
 }
 .page-title {
   margin: 0 0 16px;

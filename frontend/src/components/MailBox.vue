@@ -425,13 +425,13 @@ onBeforeUnmount(() => {
       <div style="margin-bottom: 10px;">
         <div v-if="multiActionMode" class="toolbar">
           <div class="toolbar-left">
-            <n-button text size="small" @click="multiActionModeClick(false)">
+            <n-button size="small" secondary @click="multiActionModeClick(false)">
               {{ t('cancelMultiAction') }}
             </n-button>
-            <n-button text size="small" @click="multiActionSelectAll(true)">
+            <n-button size="small" secondary type="primary" @click="multiActionSelectAll(true)">
               {{ t('selectAll') }}
             </n-button>
-            <n-button text size="small" @click="multiActionSelectAll(false)">
+            <n-button size="small" secondary @click="multiActionSelectAll(false)">
               {{ t('unselectAll') }}
             </n-button>
           </div>
@@ -450,7 +450,7 @@ onBeforeUnmount(() => {
         </div>
         <div v-else class="toolbar">
           <div class="toolbar-left">
-            <n-button text size="small" @click="multiActionModeClick(true)">
+            <n-button size="small" secondary @click="multiActionModeClick(true)">
               {{ t('multiAction') }}
             </n-button>
           </div>

@@ -94,7 +94,7 @@ const columns = [
         title: t('actions'),
         key: 'actions',
         render(row: any) {
-            return h('div', [
+            return h('div', { style: 'display: flex; gap: 12px' }, [
                 h(NPopconfirm,
                     {
                         onPositiveClick: () => {

@@ -31,6 +31,8 @@ const { locale, t } = useI18n({
             addressPassword: 'Address Password',
             userLogin: 'User Login',
             addressManage: 'Manage',
+            goToAddresses: 'Go to Address Management',
+            noAddressYet: 'You have no email address yet, please create or bind one.',
         },
         zh: {
             ok: '确定',
@@ -41,6 +43,8 @@ const { locale, t } = useI18n({
             addressPassword: '地址密码',
             userLogin: '用户登录',
             addressManage: '地址管理',
+            goToAddresses: '前往地址管理',
+            noAddressYet: '你还没有邮箱地址，请先创建或绑定一个。',
         }
     }
 });
@@ -52,7 +56,7 @@ const getUrlWithJwt = () => {
 }
 
 const onUserLogin = async () => {
-    await router.push(getRouterPathWithLang("/user", locale.value))
+    await router.push(getRouterPathWithLang("/auth/login", locale.value))
 }
 
 onMounted(async () => {
@@ -80,8 +84,14 @@ onMounted(async () => {
             <TelegramAddress />
         </div>
         <div v-else-if="userJwt" class="center">
-            <n-card :bordered="false" embedded style="max-width: 900px; width: 100%;">
-                <AddressManagement />
+            <n-card :bordered="false" embedded style="max-width: 600px;">
+                <n-empty :description="t('noAddressYet')">
+                    <template #extra>
+                        <n-button type="primary" @click="router.push(getRouterPathWithLang('/addresses', locale.value))">
+                            {{ t('goToAddresses') }}
+                        </n-button>
+                    </template>
+                </n-empty>
             </n-card>
         </div>
         <div v-else class="center">
