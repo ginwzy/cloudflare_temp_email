@@ -26,6 +26,13 @@ const API_PATHS = [
 	"/external/",
 ];
 
+// Frontend SPA routes under /admin that should be served by assets, not the API
+const ADMIN_SPA_ROUTES = [
+	"/admin/dashboard", "/admin/accounts", "/admin/users",
+	"/admin/emails", "/admin/security", "/admin/integrations",
+	"/admin/maintenance", "/admin/appearance", "/admin/about",
+];
+
 const app = new Hono<HonoCustomType>()
 //cors
 app.use('/*', cors());
@@ -38,7 +45,10 @@ app.onError((err, c) => {
 app.use('/*', async (c, next) => {
 
 	// check if the request is for static files
-	if (c.env.ASSETS && !API_PATHS.some(path => c.req.path.startsWith(path))) {
+	if (c.env.ASSETS && (
+		ADMIN_SPA_ROUTES.some(route => c.req.path === route || c.req.path.startsWith(route + '/'))
+		|| !API_PATHS.some(path => c.req.path.startsWith(path))
+	)) {
 		const url = new URL(c.req.raw.url);
 		if (!url.pathname.includes('.')) {
 			url.pathname = ""
