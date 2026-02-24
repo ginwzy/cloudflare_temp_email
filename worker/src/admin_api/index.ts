@@ -281,6 +281,27 @@ api.get('/admin/statistics', async (c) => {
     })
 });
 
+api.get('/admin/statistics/daily', async (c) => {
+    const days = 7;
+    const results = [];
+    for (let i = days - 1; i >= 0; i--) {
+        const { count: received } = await c.env.DB.prepare(
+            `SELECT count(*) as count FROM raw_mails where created_at > datetime('now', '-${i + 1} day') and created_at <= datetime('now', '-${i} day')`
+        ).first<{ count: number }>() || { count: 0 };
+        const { count: sent } = await c.env.DB.prepare(
+            `SELECT count(*) as count FROM sendbox where created_at > datetime('now', '-${i + 1} day') and created_at <= datetime('now', '-${i} day')`
+        ).first<{ count: number }>() || { count: 0 };
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        results.push({
+            date: date.toISOString().slice(5, 10),
+            received: received || 0,
+            sent: sent || 0,
+        });
+    }
+    return c.json(results);
+});
+
 api.get('/admin/account_settings', async (c) => {
     try {
         const blockList = await getJsonSetting(c, CONSTANTS.ADDRESS_BLOCK_LIST_KEY);
