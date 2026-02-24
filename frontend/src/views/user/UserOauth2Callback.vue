@@ -49,6 +49,7 @@ onMounted(async () => {
             })
         });
         userJwt.value = res.jwt;
+        await api.autoSelectFirstAddress(res.jwt);
         router.push('/user');
     } catch (error) {
         console.error(error);

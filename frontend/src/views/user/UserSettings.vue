@@ -7,7 +7,7 @@ import { NButton, NPopconfirm } from 'naive-ui'
 import { useGlobalState } from '../../store'
 import { api } from '../../api'
 
-const { userJwt, userSettings, } = useGlobalState()
+const { userJwt, jwt, userSettings, } = useGlobalState()
 const message = useMessage()
 
 const showLogout = ref(false)
@@ -60,6 +60,7 @@ const { t } = useI18n({
 
 const logout = async () => {
     userJwt.value = '';
+    jwt.value = '';
     location.reload()
 }
 

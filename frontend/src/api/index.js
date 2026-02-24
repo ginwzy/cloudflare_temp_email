@@ -200,6 +200,24 @@ const bindUserAddress = async () => {
     }
 }
 
+const autoSelectFirstAddress = async (newUserJwt) => {
+    try {
+        const { results } = await apiFetch(`/user_api/bind_address`, {
+            userJwt: newUserJwt,
+        });
+        if (results && results.length > 0) {
+            const res = await apiFetch(`/user_api/bind_address_jwt/${results[0].id}`, {
+                userJwt: newUserJwt,
+            });
+            if (res?.jwt) {
+                jwt.value = res.jwt;
+            }
+        }
+    } catch (e) {
+        // Non-critical: user can still manually select an address
+    }
+}
+
 export const api = {
     fetch: apiFetch,
     getSettings,
@@ -209,4 +227,5 @@ export const api = {
     adminShowAddressCredential,
     adminDeleteAddress,
     bindUserAddress,
+    autoSelectFirstAddress,
 }

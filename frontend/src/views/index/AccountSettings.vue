@@ -14,7 +14,6 @@ const {
 const router = useRouter()
 const message = useMessage()
 
-const showLogout = ref(false)
 const showDeleteAccount = ref(false)
 const showClearInbox = ref(false)
 const showClearSentItems = ref(false)
@@ -24,10 +23,8 @@ const confirmPassword = ref('')
 const { locale, t } = useI18n({
     messages: {
         en: {
-            logout: "Logout",
             deleteAccount: "Delete Account",
             showAddressCredential: 'Show Address Credential',
-            logoutConfirm: 'Are you sure to logout?',
             deleteAccount: "Delete Account",
             deleteAccountConfirm: "Are you sure to delete your account and all emails for this account?",
             clearInbox: "Clear Inbox",
@@ -42,10 +39,8 @@ const { locale, t } = useI18n({
             passwordChanged: "Password changed successfully",
         },
         zh: {
-            logout: '退出登录',
             deleteAccount: "删除账户",
             showAddressCredential: '查看邮箱地址凭证',
-            logoutConfirm: '确定要退出登录吗？',
             deleteAccount: "删除账户",
             deleteAccountConfirm: "确定要删除你的账户和其中的所有邮件吗?",
             clearInbox: "清空收件箱",
@@ -61,12 +56,6 @@ const { locale, t } = useI18n({
         }
     }
 });
-
-const logout = async () => {
-    jwt.value = '';
-    await router.push(getRouterPathWithLang("/", locale.value))
-    location.reload()
-}
 
 const deleteAccount = async () => {
     try {
@@ -146,22 +135,11 @@ const changePassword = async () => {
                 secondary block strong>
                 {{ t('clearSentItems') }}
             </n-button>
-            <n-button @click="showLogout = true" secondary block strong>
-                {{ t('logout') }}
-            </n-button>
             <n-button v-if="openSettings.enableUserDeleteEmail" @click="showDeleteAccount = true" type="error" secondary
                 block strong>
                 {{ t('deleteAccount') }}
             </n-button>
         </n-card>
-        <n-modal v-model:show="showLogout" preset="dialog" :title="t('logout')">
-            <p>{{ t('logoutConfirm') }}</p>
-            <template #action>
-                <n-button :loading="loading" @click="logout" size="small" tertiary type="warning">
-                    {{ t('logout') }}
-                </n-button>
-            </template>
-        </n-modal>
         <n-modal v-model:show="showDeleteAccount" preset="dialog" :title="t('deleteAccount')">
             <p>{{ t('deleteAccountConfirm') }}</p>
             <template #action>

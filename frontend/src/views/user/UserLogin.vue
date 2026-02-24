@@ -2,6 +2,7 @@
 import { useMessage } from 'naive-ui'
 import { onMounted, ref } from "vue";
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { KeyFilled } from '@vicons/material'
 
 import { api } from '../../api';
@@ -16,6 +17,7 @@ const {
     userOauth2SessionState, userOauth2SessionClientID
 } = useGlobalState()
 const message = useMessage();
+const router = useRouter();
 
 const { t } = useI18n({
     messages: {
@@ -86,7 +88,8 @@ const emailLogin = async () => {
             })
         });
         userJwt.value = res.jwt;
-        location.reload();
+        await api.autoSelectFirstAddress(res.jwt);
+        location.href = '/';
     } catch (error) {
         message.error(error.message || "login failed");
     }
@@ -183,7 +186,8 @@ const passkeyLogin = async () => {
             })
         })
         userJwt.value = res.jwt;
-        location.reload();
+        await api.autoSelectFirstAddress(res.jwt);
+        location.href = '/';
     } catch (e) {
         console.error(e)
         message.error(e.message)
