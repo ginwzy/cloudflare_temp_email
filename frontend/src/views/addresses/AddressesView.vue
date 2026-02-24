@@ -1,11 +1,11 @@
 <script setup>
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { useGlobalState } from '../../store'
 import AddressManagement from '../user/AddressManagement.vue'
 import TelegramAddress from '../index/TelegramAddress.vue'
-import LocalAddress from '../index/LocalAddress.vue'
-import Login from '../common/Login.vue'
 
+const router = useRouter()
 const { userJwt, isTelegram, userSettings } = useGlobalState()
 
 const { t } = useI18n({
@@ -27,8 +27,13 @@ const { t } = useI18n({
     </div>
     <div v-else class="login-prompt">
       <n-card :bordered="false" embedded style="max-width: 600px; margin: 0 auto;">
-        <n-text depth="3">{{ t('loginRequired') }}</n-text>
-        <LocalAddress />
+        <n-empty :description="t('loginRequired')">
+          <template #extra>
+            <n-button type="primary" @click="router.push('/auth/login')">
+              {{ t('loginRequired') }}
+            </n-button>
+          </template>
+        </n-empty>
       </n-card>
     </div>
   </div>

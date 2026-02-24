@@ -41,7 +41,7 @@ const router = createRouter({
                     path: 'settings',
                     component: SettingsLayout,
                     beforeEnter: (to, from, next) => {
-                        if (!jwt.value && !userJwt.value) {
+                        if (!userJwt.value) {
                             next('/')
                         } else {
                             next()
@@ -107,8 +107,12 @@ router.beforeEach((to, from, next) => {
     } else {
         i18n.global.locale.value = 'zh'
     }
-    if (to.query.jwt) {
-        jwt.value = to.query.jwt;
+    // Redirect unauthenticated users to login (skip auth/admin/telegram routes)
+    const isPublic = to.path.startsWith('/auth') || to.path.startsWith('/admin')
+        || to.path.includes('/auth/') || to.path.includes('/telegram')
+    if (!userJwt.value && !isPublic) {
+        next('/auth/login')
+        return
     }
     next()
 });

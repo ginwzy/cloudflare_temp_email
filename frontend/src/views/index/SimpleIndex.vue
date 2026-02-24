@@ -13,13 +13,12 @@ import {
 
 import { useGlobalState } from '../../store'
 import { api } from '../../api'
-import Login from '../common/Login.vue'
 import AccountSettings from './AccountSettings.vue'
 import { processItem } from '../../utils/email-parser'
 import MailContentRenderer from '../../components/MailContentRenderer.vue'
 import AddressSelect from '../../components/AddressSelect.vue'
 
-const { jwt, settings, useSimpleIndex, showAddressCredential, openSettings, loading } = useGlobalState()
+const { settings, useSimpleIndex, openSettings, loading } = useGlobalState()
 const message = useMessage()
 
 // 邮件数据
@@ -43,10 +42,9 @@ const { t } = useI18n({
             refreshSuccess: 'Mails refreshed successfully',
             mailCount: '{current} / {total} emails',
             accountSettings: "Account Settings",
-            addressCredential: 'Mail Address Credential',
-            addressCredentialTip: 'Please copy the Mail Address Credential and you can use it to login',
             deleteSuccess: 'Mail deleted successfully',
             refreshAfter: 'Refresh After {msg} Seconds',
+            loginRequired: 'Please log in first',
         },
         zh: {
             exitSimpleIndex: '退出极简',
@@ -59,10 +57,9 @@ const { t } = useI18n({
             refreshSuccess: '邮件刷新成功',
             mailCount: '{current} / {total} 封邮件',
             accountSettings: "账户设置",
-            addressCredential: '邮箱地址凭证',
-            addressCredentialTip: '请复制邮箱地址凭证，你可以使用它登录你的邮箱。',
             deleteSuccess: '邮件删除成功',
             refreshAfter: '{msg}秒后刷新',
+            loginRequired: '请先登录',
         }
     }
 })
@@ -165,7 +162,13 @@ onBeforeUnmount(() => {
     <div class="center">
         <div v-if="!settings.address">
             <n-card :bordered="false" embedded>
-                <Login />
+                <n-empty :description="t('loginRequired')">
+                    <template #extra>
+                        <n-button type="primary" @click="$router.push('/auth/login')">
+                            {{ t('loginRequired') }}
+                        </n-button>
+                    </template>
+                </n-empty>
             </n-card>
         </div>
 
@@ -260,14 +263,6 @@ onBeforeUnmount(() => {
                 </div>
             </n-card>
         </div>
-        <n-modal v-model:show="showAddressCredential" preset="dialog" :title="t('addressCredential')">
-            <span>
-                <p>{{ t("addressCredentialTip") }}</p>
-            </span>
-            <n-card embedded>
-                <b>{{ jwt }}</b>
-            </n-card>
-        </n-modal>
     </div>
 </template>
 

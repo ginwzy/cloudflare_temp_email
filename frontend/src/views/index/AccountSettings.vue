@@ -9,7 +9,7 @@ import { hashPassword } from '../../utils'
 import { getRouterPathWithLang } from '../../utils'
 
 const {
-    jwt, settings, showAddressCredential, loading, openSettings
+    jwt, settings, loading, openSettings
 } = useGlobalState()
 const router = useRouter()
 const message = useMessage()
@@ -24,8 +24,6 @@ const { locale, t } = useI18n({
     messages: {
         en: {
             deleteAccount: "Delete Account",
-            showAddressCredential: 'Show Address Credential',
-            deleteAccount: "Delete Account",
             deleteAccountConfirm: "Are you sure to delete your account and all emails for this account?",
             clearInbox: "Clear Inbox",
             clearSentItems: "Clear Sent Items",
@@ -39,8 +37,6 @@ const { locale, t } = useI18n({
             passwordChanged: "Password changed successfully",
         },
         zh: {
-            deleteAccount: "删除账户",
-            showAddressCredential: '查看邮箱地址凭证',
             deleteAccount: "删除账户",
             deleteAccountConfirm: "确定要删除你的账户和其中的所有邮件吗?",
             clearInbox: "清空收件箱",
@@ -121,9 +117,6 @@ const changePassword = async () => {
 <template>
     <div class="center" v-if="settings.address">
         <n-card :bordered="false" embedded>
-            <n-button @click="showAddressCredential = true" type="primary" secondary block strong>
-                {{ t('showAddressCredential') }}
-            </n-button>
             <n-button v-if="openSettings?.enableAddressPassword" @click="showChangePassword = true" type="info" secondary block strong>
                 {{ t('changePassword') }}
             </n-button>

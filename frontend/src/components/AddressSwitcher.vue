@@ -5,7 +5,6 @@ import { ContentCopyFilled } from '@vicons/material'
 import { ExchangeAlt } from '@vicons/fa'
 import { useGlobalState } from '../store'
 import TelegramAddress from '../views/index/TelegramAddress.vue'
-import LocalAddress from '../views/index/LocalAddress.vue'
 import AddressManagement from '../views/user/AddressManagement.vue'
 
 const message = useMessage()
@@ -50,7 +49,6 @@ const copyAddress = async () => {
   <n-modal v-model:show="showManage" preset="card" :title="t('manage')">
     <TelegramAddress v-if="isTelegram" />
     <AddressManagement v-else-if="userJwt" />
-    <LocalAddress v-else />
   </n-modal>
 </template>
 

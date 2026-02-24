@@ -11,7 +11,6 @@ import { GithubAlt, Language, ExchangeAlt } from '@vicons/fa'
 import { useGlobalState } from '../store'
 import { getRouterPathWithLang } from '../utils'
 import TelegramAddress from '../views/index/TelegramAddress.vue'
-import LocalAddress from '../views/index/LocalAddress.vue'
 import AddressManagement from '../views/user/AddressManagement.vue'
 
 const route = useRoute()
@@ -58,7 +57,7 @@ const navItems = computed(() => [
   { key: 'sent', label: t('sent'), icon: SendRound, path: '/sent', show: openSettings.value.enableSendMail },
   { key: 'compose', label: t('compose'), icon: EditRound, path: '/compose', show: openSettings.value.enableSendMail },
   { key: 'addresses', label: t('addresses'), icon: AlternateEmailRound, path: '/addresses', show: !!userJwt.value },
-  { key: 'settings', label: t('settings'), icon: SettingsRound, path: '/settings/account', show: !!settings.value.address || !!userJwt.value },
+  { key: 'settings', label: t('settings'), icon: SettingsRound, path: '/settings/account', show: !!userJwt.value },
 ].filter(i => i.show))
 
 const navigate = async (path) => {
@@ -155,7 +154,6 @@ const copyAddress = async () => {
   <n-modal v-model:show="showAddressManage" preset="card" :title="t('manage')" style="max-width: 600px; width: 90%;">
     <TelegramAddress v-if="isTelegram" />
     <AddressManagement v-else-if="userJwt" />
-    <LocalAddress v-else />
   </n-modal>
 </template>
 

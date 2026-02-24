@@ -1,6 +1,5 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue'
-import { useLocalStorage } from '@vueuse/core'
 import { useI18n } from 'vue-i18n'
 import { useMessage } from 'naive-ui'
 import useClipboard from 'vue-clipboard3'
@@ -30,15 +29,11 @@ const {
 const { t } = useI18n({
     messages: {
         en: {
-            userAddresses: 'User Addresses',
-            localAddresses: 'Local Addresses',
             address: 'Address',
             copy: 'Copy',
             copied: 'Copied',
         },
         zh: {
-            userAddresses: '用户地址',
-            localAddresses: '本地地址',
             address: '地址',
             copy: '复制',
             copied: '已复制',
@@ -49,7 +44,6 @@ const { t } = useI18n({
 const addressOptions = ref([])
 const addressValue = ref(null)
 const addressLoading = ref(false)
-const localAddressCache = useLocalStorage("LocalAddressCache", [])
 const optionValueMap = new Map()
 
 const formatAddressLabel = (address) => {
@@ -60,21 +54,6 @@ const formatAddressLabel = (address) => {
     )?.label;
     if (!domainLabel) return address;
     return address.replace('@' + domain, `@${domainLabel}`);
-}
-
-const parseJwtAddress = (curJwt) => {
-    try {
-        const payload = JSON.parse(
-            decodeURIComponent(
-                atob(curJwt.split(".")[1]
-                    .replace(/-/g, "+").replace(/_/g, "/")
-                )
-            )
-        );
-        return payload.address;
-    } catch (e) {
-        return null;
-    }
 }
 
 const getOptionValue = (key, scope, payload, address) => {
@@ -88,27 +67,6 @@ const getOptionValue = (key, scope, payload, address) => {
     const value = { key, scope, payload, address }
     optionValueMap.set(key, value)
     return value
-}
-
-const buildLocalOptions = (excludeAddresses = new Set()) => {
-    if (typeof jwt.value === 'string' && jwt.value && !localAddressCache.value.includes(jwt.value)) {
-        localAddressCache.value.push(jwt.value)
-    }
-    const children = localAddressCache.value
-        .map((curJwt) => {
-            const address = parseJwtAddress(curJwt);
-            if (!address) return null;
-            if (excludeAddresses.has(address)) return null;
-            const label = formatAddressLabel(address);
-            const key = `local:${curJwt}`;
-            const option = { label, value: getOptionValue(key, 'local', curJwt, address), address };
-            if (settings.value.address && address === settings.value.address) {
-                addressValue.value = option.value;
-            }
-            return option;
-        })
-        .filter(Boolean);
-    return children;
 }
 
 const buildUserOptions = async () => {
@@ -166,24 +124,12 @@ const refreshAddressOptions = async () => {
             addressOptions.value = telegramChildren;
             return;
         }
-        const groups = [];
         if (userJwt.value) {
             const userChildren = await buildUserOptions();
-            if (userChildren.length > 0) {
-                groups.push({ type: 'group', label: t('userAddresses'), children: userChildren });
-            }
-            const userAddressSet = new Set(userChildren.map((item) => item.address));
-            const localChildren = buildLocalOptions(userAddressSet);
-            if (localChildren.length > 0) {
-                groups.push({ type: 'group', label: t('localAddresses'), children: localChildren });
-            }
+            addressOptions.value = userChildren;
         } else {
-            const localChildren = buildLocalOptions();
-            if (localChildren.length > 0) {
-                groups.push({ type: 'group', label: t('localAddresses'), children: localChildren });
-            }
+            addressOptions.value = [];
         }
-        addressOptions.value = groups;
     } finally {
         addressLoading.value = false;
     }
@@ -191,7 +137,7 @@ const refreshAddressOptions = async () => {
 
 const onAddressChange = async (value) => {
     if (!value) return;
-    if (value.scope === 'local' || value.scope === 'tg') {
+    if (value.scope === 'tg') {
         jwt.value = value.payload;
         location.reload();
         return;

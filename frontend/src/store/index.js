@@ -21,7 +21,6 @@ export const useGlobalState = createGlobalState(
             needAuth: false,
             adminContact: '',
             enableUserCreateEmail: false,
-            disableAnonymousUserCreateEmail: false,
             disableCustomAddressName: false,
             enableUserDeleteEmail: false,
             enableAutoReply: false,
@@ -60,7 +59,6 @@ export const useGlobalState = createGlobalState(
             content: "",
         });
         const showAuth = ref(false);
-        const showAddressCredential = ref(false);
         const showAdminAuth = ref(false);
         const auth = useStorage('auth', '');
         const adminAuth = useStorage('adminAuth', '');
@@ -123,7 +121,6 @@ export const useGlobalState = createGlobalState(
             announcement,
             openSettings,
             showAuth,
-            showAddressCredential,
             auth,
             jwt,
             adminAuth,

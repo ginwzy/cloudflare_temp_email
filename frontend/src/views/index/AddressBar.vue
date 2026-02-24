@@ -2,13 +2,11 @@
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { User, ExchangeAlt } from '@vicons/fa'
+import { ExchangeAlt } from '@vicons/fa'
 
 import { useGlobalState } from '../../store'
 import { api } from '../../api'
-import Login from '../common/Login.vue'
 import TelegramAddress from './TelegramAddress.vue'
-import LocalAddress from './LocalAddress.vue'
 import AddressManagement from '../user/AddressManagement.vue'
 import { getRouterPathWithLang } from '../../utils'
 import AddressSelect from '../../components/AddressSelect.vue'
@@ -16,48 +14,29 @@ import AddressSelect from '../../components/AddressSelect.vue'
 const router = useRouter()
 
 const {
-    jwt, settings, showAddressCredential, userJwt,
-    isTelegram, addressPassword
+    settings, userJwt, isTelegram
 } = useGlobalState()
 
 const { locale, t } = useI18n({
     messages: {
         en: {
-            ok: 'OK',
-            fetchAddressError: 'Mail address credential is invalid or account not exist, it may be network connection issue, please try again later.',
-            addressCredential: 'Mail Address Credential',
-            linkWithAddressCredential: 'Open to auto login email link',
-            addressCredentialTip: 'Please copy the Mail Address Credential and you can use it to login to your email account.',
-            addressPassword: 'Address Password',
             userLogin: 'User Login',
             addressManage: 'Manage',
             goToAddresses: 'Go to Address Management',
             noAddressYet: 'You have no email address yet, please create or bind one.',
+            loginRequired: 'Please log in to view your inbox',
         },
         zh: {
-            ok: '确定',
-            fetchAddressError: '邮箱地址凭证无效或邮箱地址不存在，也可能是网络连接异常，请稍后再尝试。',
-            addressCredential: '邮箱地址凭证',
-            linkWithAddressCredential: '打开即可自动登录邮箱的链接',
-            addressCredentialTip: '请复制邮箱地址凭证，你可以使用它登录你的邮箱。',
-            addressPassword: '地址密码',
             userLogin: '用户登录',
             addressManage: '地址管理',
             goToAddresses: '前往地址管理',
             noAddressYet: '你还没有邮箱地址，请先创建或绑定一个。',
+            loginRequired: '请登录以查看收件箱',
         }
     }
 });
 
 const showAddressManage = ref(false)
-
-const getUrlWithJwt = () => {
-    return `${window.location.origin}/?jwt=${jwt.value}`
-}
-
-const onUserLogin = async () => {
-    await router.push(getRouterPathWithLang("/auth/login", locale.value))
-}
 
 onMounted(async () => {
     await api.getSettings();
@@ -96,44 +75,18 @@ onMounted(async () => {
         </div>
         <div v-else class="center">
             <n-card :bordered="false" embedded style="max-width: 600px;">
-                <n-alert v-if="jwt" type="warning" :show-icon="false" :bordered="false" closable>
-                    <span>{{ t('fetchAddressError') }}</span>
-                </n-alert>
-                <Login />
-                <n-divider />
-                <n-button @click="onUserLogin" type="primary" block secondary strong>
-                    <template #icon>
-                        <n-icon :component="User" />
+                <n-empty :description="t('loginRequired')">
+                    <template #extra>
+                        <n-button type="primary" @click="router.push(getRouterPathWithLang('/auth/login', locale.value))">
+                            {{ t('userLogin') }}
+                        </n-button>
                     </template>
-                    {{ t('userLogin') }}
-                </n-button>
+                </n-empty>
             </n-card>
         </div>
-        <n-modal v-model:show="showAddressCredential" preset="dialog" :title="t('addressCredential')">
-            <span>
-                <p>{{ t("addressCredentialTip") }}</p>
-            </span>
-            <n-card embedded>
-                <b>{{ jwt }}</b>
-            </n-card>
-            <n-card embedded v-if="addressPassword">
-                <p><b>{{ settings.address }}</b></p>
-                <p>{{ t('addressPassword') }}: <b>{{ addressPassword }}</b></p>
-            </n-card>
-            <n-card embedded>
-                <n-collapse>
-                    <n-collapse-item :title='t("linkWithAddressCredential")'>
-                        <n-card embedded>
-                            <b>{{ getUrlWithJwt() }}</b>
-                        </n-card>
-                    </n-collapse-item>
-                </n-collapse>
-            </n-card>
-        </n-modal>
         <n-modal v-model:show="showAddressManage" preset="card" :title="t('addressManage')">
             <TelegramAddress v-if="isTelegram" />
             <AddressManagement v-else-if="userJwt" />
-            <LocalAddress v-else />
         </n-modal>
     </div>
 </template>

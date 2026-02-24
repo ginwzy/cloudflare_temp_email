@@ -117,45 +117,43 @@ const passkeyColumns = [
         title: t('actions'),
         key: 'actions',
         render(row) {
-            return h('div', [
-                [
-                    h(NButton,
-                        {
-                            tertiary: true,
-                            type: "primary",
-                            onClick: () => {
-                                showRenamePasskey.value = true;
-                                currentPasskeyId.value = row.passkey_id;
-                            }
-                        },
-                        { default: () => t('renamePasskey') }
-                    ),
-                    h(NPopconfirm,
-                        {
-                            onPositiveClick: async () => {
-                                try {
-                                    await api.fetch(`/user_api/passkey/${row.passkey_id}`, {
-                                        method: 'DELETE'
-                                    })
-                                    await fetchPasskeyList()
-                                } catch (e) {
-                                    console.error(e)
-                                    message.error(e.message)
-                                }
-                            }
-                        },
-                        {
-                            trigger: () => h(NButton,
-                                {
-                                    tertiary: true,
-                                    type: "error",
-                                },
-                                { default: () => t('deletePasskey') }
-                            ),
-                            default: () => `${t('deletePasskey')}?`
+            return h('div', { style: 'display: flex; gap: 8px; flex-wrap: wrap' }, [
+                h(NButton,
+                    {
+                        tertiary: true,
+                        type: "primary",
+                        onClick: () => {
+                            showRenamePasskey.value = true;
+                            currentPasskeyId.value = row.passkey_id;
                         }
-                    ),
-                ]
+                    },
+                    { default: () => t('renamePasskey') }
+                ),
+                h(NPopconfirm,
+                    {
+                        onPositiveClick: async () => {
+                            try {
+                                await api.fetch(`/user_api/passkey/${row.passkey_id}`, {
+                                    method: 'DELETE'
+                                })
+                                await fetchPasskeyList()
+                            } catch (e) {
+                                console.error(e)
+                                message.error(e.message)
+                            }
+                        }
+                    },
+                    {
+                        trigger: () => h(NButton,
+                            {
+                                tertiary: true,
+                                type: "error",
+                            },
+                            { default: () => t('deletePasskey') }
+                        ),
+                        default: () => `${t('deletePasskey')}?`
+                    }
+                ),
             ])
         }
     }
@@ -227,7 +225,7 @@ const renamePasskey = async () => {
                 </n-button>
             </template>
         </n-modal>
-        <n-modal v-model:show="showPasskeyList" preset="card" :title="t('showPasskeyList')">
+        <n-modal v-model:show="showPasskeyList" preset="card" :title="t('showPasskeyList')" style="max-width: 900px; width: 95%;">
             <n-data-table :columns="passkeyColumns" :data="passkeyData" :bordered="false" embedded />
         </n-modal>
         <n-modal v-model:show="showLogout" preset="dialog" :title="t('logout')">

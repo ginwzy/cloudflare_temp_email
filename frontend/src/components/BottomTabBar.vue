@@ -12,7 +12,6 @@ import { GithubAlt, Language } from '@vicons/fa'
 import { useGlobalState } from '../store'
 import { getRouterPathWithLang } from '../utils'
 import TelegramAddress from '../views/index/TelegramAddress.vue'
-import LocalAddress from '../views/index/LocalAddress.vue'
 import AddressManagement from '../views/user/AddressManagement.vue'
 
 const route = useRoute()
@@ -99,7 +98,7 @@ const changeLocale = async () => {
   <n-drawer v-model:show="showMore" placement="bottom" :height="320" :closable="true">
     <n-drawer-content :title="t('more')">
       <div class="more-menu">
-        <div v-if="settings.address || userJwt" class="more-item" @click="navigate('/settings/account'); showMore = false">
+        <div v-if="userJwt" class="more-item" @click="navigate('/settings/account'); showMore = false">
           <n-icon :component="SettingsRound" :size="20" />
           <span>{{ t('settings') }}</span>
         </div>
@@ -126,7 +125,6 @@ const changeLocale = async () => {
   <n-modal v-model:show="showAddressManage" preset="card" :title="t('manage')">
     <TelegramAddress v-if="isTelegram" />
     <AddressManagement v-else-if="userJwt" />
-    <LocalAddress v-else />
   </n-modal>
 </template>
 
