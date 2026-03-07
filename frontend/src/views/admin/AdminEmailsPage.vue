@@ -1,18 +1,14 @@
 <script setup>
-import { ref, defineAsyncComponent } from 'vue'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useGlobalState } from '../../store'
 import Mails from './Mails.vue'
 import MailsUnknow from './MailsUnknow.vue'
 import SendBox from './SendBox.vue'
 import MailWebhook from './MailWebhook.vue'
+import SendMail from './SendMail.vue'
 
-const { loading, adminSendBoxTabAddress } = useGlobalState()
-
-const SendMail = defineAsyncComponent(() => {
-  loading.value = true
-  return import('./SendMail.vue').finally(() => loading.value = false)
-})
+const { adminSendBoxTabAddress } = useGlobalState()
 
 const { t } = useI18n({
   messages: {

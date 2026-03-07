@@ -19,7 +19,10 @@ const instance = axios.create({
 });
 
 const apiFetch = async (path, options = {}) => {
-    loading.value = true;
+    const useGlobalLoading = options.useGlobalLoading !== false;
+    if (useGlobalLoading) {
+        loading.value = true;
+    }
     try {
         // Get browser fingerprint for request tracking
         const fingerprint = await getFingerprint();
@@ -55,7 +58,9 @@ const apiFetch = async (path, options = {}) => {
         }
         throw error;
     } finally {
-        loading.value = false;
+        if (useGlobalLoading) {
+            loading.value = false;
+        }
     }
 }
 

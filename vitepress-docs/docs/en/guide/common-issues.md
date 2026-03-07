@@ -38,4 +38,4 @@
 
 | Issue                                                      | Solution                                                                                     |
 | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| After Github Action deployment, CF always shows preview branch | Go to CF pages settings to confirm that the frontend branch matches the Github Action frontend deployment branch |
+| Push to `main` but no backend deployment run | Confirm `Backend Auto Deploy` is enabled and check whether your push target branch is `main` |

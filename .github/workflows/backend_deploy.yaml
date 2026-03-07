@@ -1,13 +1,14 @@
-name: Deploy Backend
+name: Backend Auto Deploy
 
 on:
-  workflow_run:
-    workflows: [Upstream Sync]
-    types: [completed]
   push:
-    tags:
-      - "*"
+    branches:
+      - main
   workflow_dispatch:
+
+concurrency:
+  group: deploy-backend-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   deploy:

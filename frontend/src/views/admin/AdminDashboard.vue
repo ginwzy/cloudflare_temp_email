@@ -1,14 +1,6 @@
 <script setup>
-import { defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useGlobalState } from '../../store'
-
-const { loading } = useGlobalState()
-
-const Statistics = defineAsyncComponent(() => {
-  loading.value = true
-  return import('./Statistics.vue').finally(() => loading.value = false)
-})
+import Statistics from './Statistics.vue'
 
 const { t } = useI18n({
   messages: {

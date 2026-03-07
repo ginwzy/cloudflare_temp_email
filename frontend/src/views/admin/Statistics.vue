@@ -241,13 +241,14 @@ const parseSubject = (mail) => {
 }
 
 onMounted(async () => {
+  const silentRequest = (path) => api.fetch(path, { useGlobalLoading: false })
   try {
     const [statsData, mailsData, db, config, daily] = await Promise.all([
-      api.fetch('/admin/statistics'),
-      api.fetch('/admin/mails?limit=5&offset=0').catch(() => null),
-      api.fetch('/admin/db_version').catch(() => null),
-      api.fetch('/admin/worker/configs').catch(() => null),
-      api.fetch('/admin/statistics/daily').catch(() => []),
+      silentRequest('/admin/statistics'),
+      silentRequest('/admin/mails?limit=5&offset=0').catch(() => null),
+      silentRequest('/admin/db_version').catch(() => null),
+      silentRequest('/admin/worker/configs').catch(() => null),
+      silentRequest('/admin/statistics/daily').catch(() => []),
     ])
     Object.assign(stats.value, statsData)
     recentMails.value = mailsData?.results || []
@@ -264,6 +265,12 @@ onMounted(async () => {
 
 <template>
   <div class="dashboard">
+    <div v-if="loading" class="dashboard-loading-overlay">
+      <div class="dashboard-loading-content">
+        <n-spin size="large" />
+      </div>
+    </div>
+
     <!-- Stats Grid -->
     <div class="stats-grid">
       <div v-for="card in statCards" :key="card.key" class="stat-card">
@@ -294,8 +301,7 @@ onMounted(async () => {
         <div class="panel-header">
           <span class="panel-title">{{ t('mailActivity') }}</span>
         </div>
-        <div v-if="loading" class="panel-loading"><n-spin size="small" /></div>
-        <div v-else class="chart-wrap">
+        <div class="chart-wrap">
           <v-chart :option="barChartOption" autoresize />
         </div>
       </div>
@@ -303,8 +309,7 @@ onMounted(async () => {
         <div class="panel-header">
           <span class="panel-title">{{ t('addressActivity') }}</span>
         </div>
-        <div v-if="loading" class="panel-loading"><n-spin size="small" /></div>
-        <div v-else class="chart-wrap">
+        <div class="chart-wrap">
           <v-chart :option="donutChartOption" autoresize />
         </div>
       </div>
@@ -318,8 +323,7 @@ onMounted(async () => {
           <span class="panel-title">{{ t('recentEmails') }}</span>
           <span class="panel-count" v-if="recentMails.length">{{ recentMails.length }}</span>
         </div>
-        <div v-if="loading" class="panel-loading"><n-spin size="small" /></div>
-        <div v-else-if="!recentMails.length" class="empty-state">
+        <div v-if="!recentMails.length" class="empty-state">
           <svg class="empty-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="8" y="16" width="48" height="36" rx="4" stroke="currentColor" stroke-width="2" opacity="0.25"/>
             <path d="M8 24l24 14 24-14" stroke="currentColor" stroke-width="2" opacity="0.35"/>
@@ -345,8 +349,7 @@ onMounted(async () => {
         <div class="panel-header">
           <span class="panel-title">{{ t('systemInfo') }}</span>
         </div>
-        <div v-if="loading" class="panel-loading"><n-spin size="small" /></div>
-        <div v-else class="info-list">
+        <div class="info-list">
           <template v-if="dbInfo">
             <div class="info-row">
               <span class="info-key">{{ t('dbVersion') }}</span>
@@ -393,9 +396,27 @@ onMounted(async () => {
 
 <style scoped>
 .dashboard {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+.dashboard-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--ds-bg) 82%, transparent);
+  backdrop-filter: blur(1.5px);
+  border-radius: var(--ds-radius);
+}
+.dashboard-loading-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
 }
 
 /* ── Stats Grid ── */
@@ -541,11 +562,6 @@ onMounted(async () => {
   padding: 2px 8px;
   border-radius: 10px;
 }
-.panel-loading {
-  padding: 40px;
-  text-align: center;
-}
-
 /* ── Empty State ── */
 .empty-state {
   display: flex;
