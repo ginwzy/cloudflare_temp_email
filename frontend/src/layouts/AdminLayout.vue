@@ -19,6 +19,7 @@ const route = useRoute()
 const router = useRouter()
 const isMobile = useIsMobile()
 const message = useMessage()
+const notification = useNotification()
 
 const {
   isDark, toggleDark, openSettings, loading,
@@ -97,6 +98,7 @@ const changeLocale = async () => {
 }
 
 onMounted(async () => {
+  if (!openSettings.value.fetched) await api.getOpenSettings(message, notification)
   if (!userSettings.value.user_id) await api.getUserSettings(message)
 })
 </script>

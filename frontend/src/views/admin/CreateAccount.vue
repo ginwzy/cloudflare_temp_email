@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n'
 
 import { useGlobalState } from '../../store'
@@ -79,12 +79,23 @@ const getUrlWithJwt = () => {
     return `${window.location.origin}/?jwt=${result.value}`
 }
 
-onMounted(async () => {
-    if (openSettings.prefix) {
-        enablePrefix.value = true
-    }
-    emailDomain.value = openSettings.value.domains?.[0]?.value || ""
-})
+watch(
+    () => openSettings.value.prefix,
+    (prefix) => {
+        enablePrefix.value = !!prefix
+    },
+    { immediate: true }
+)
+
+watch(
+    () => openSettings.value.domains,
+    (domains) => {
+        if (!emailDomain.value && domains?.length) {
+            emailDomain.value = domains[0].value
+        }
+    },
+    { immediate: true }
+)
 </script>
 
 <template>
