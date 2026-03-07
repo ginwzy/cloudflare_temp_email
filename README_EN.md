@@ -118,8 +118,8 @@ Try it now → [https://mail.awsl.uk/](https://mail.awsl.uk/)
 
 ### 👥 User Management
 
-- [x] Use `credentials` to log in to previously used mailboxes
-- [x] Add complete user registration and login functionality. Users can bind email addresses and automatically obtain email JWT credentials to switch between different mailboxes after binding
+- [x] Support mailbox login via address password (when address password is enabled)
+- [x] Add complete user registration and login functionality. Users can bind email addresses and switch between bound addresses
 - [x] Support `OAuth2` third-party login (Github, Authentik, etc.)
 - [x] Support `Passkey` passwordless login
 - [x] User role management with support for multi-role domain and prefix configuration

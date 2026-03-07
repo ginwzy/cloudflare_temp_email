@@ -1,5 +1,4 @@
 import { Hono } from 'hono'
-import { Jwt } from 'hono/utils/jwt'
 
 import i18n from '../i18n'
 import { sendAdminInternalMail, getJsonSetting, saveSetting, getUserRoles, getBooleanValue, hashPassword } from '../utils'
@@ -78,8 +77,8 @@ api.post('/admin/new_address', async (c) => {
             sourceMeta: 'admin',
             tags: tags || null,
         });
-
-        return c.json(res);
+        const { address, password } = res;
+        return c.json({ address, password });
     } catch (e) {
         return c.text(`${msgs.FailedCreateAddressMsg}: ${(e as Error).message}`, 400)
     }
@@ -148,20 +147,6 @@ api.delete('/admin/clear_sent_items/:id', async (c) => {
     }
     return c.json({
         success: sendboxSuccess
-    })
-})
-
-api.get('/admin/show_password/:id', async (c) => {
-    const { id } = c.req.param();
-    const name = await c.env.DB.prepare(
-        `SELECT name FROM address WHERE id = ? `
-    ).bind(id).first("name");
-    const jwt = await Jwt.sign({
-        address: name,
-        address_id: id
-    }, c.env.JWT_SECRET, "HS256")
-    return c.json({
-        jwt: jwt
     })
 })
 

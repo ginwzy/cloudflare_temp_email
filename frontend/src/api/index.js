@@ -174,15 +174,6 @@ const getUserSettings = async (message) => {
     }
 }
 
-const adminShowAddressCredential = async (id) => {
-    try {
-        const { jwt: addressCredential } = await apiFetch(`/admin/show_password/${id}`);
-        return addressCredential;
-    } catch (error) {
-        throw error;
-    }
-}
-
 const adminDeleteAddress = async (id) => {
     try {
         await apiFetch(`/admin/delete_address/${id}`, {
@@ -228,7 +219,6 @@ export const api = {
     getOpenSettings,
     getUserOpenSettings,
     getUserSettings,
-    adminShowAddressCredential,
     adminDeleteAddress,
     bindUserAddress,
     autoSelectFirstAddress,

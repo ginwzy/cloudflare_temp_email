@@ -26,9 +26,6 @@ const { t, locale } = useI18n({
             mail_count: 'Mail Count',
             send_count: 'Send Count',
             source_meta: 'Source',
-            showCredential: 'Show Mail Address Credential',
-            addressCredential: 'Mail Address Credential',
-            addressCredentialTip: 'Please copy the Mail Address Credential and you can use it to login to your email account.',
             delete: 'Delete',
             deleteTip: 'Are you sure to delete this email?',
             deleteAccount: 'Delete Account',
@@ -76,9 +73,6 @@ const { t, locale } = useI18n({
             mail_count: '邮件数量',
             send_count: '发送数量',
             source_meta: '来源',
-            showCredential: '查看邮箱地址凭证',
-            addressCredential: '邮箱地址凭证',
-            addressCredentialTip: '请复制邮箱地址凭证，你可以使用它登录你的邮箱。',
             delete: '删除',
             deleteTip: '确定要删除这个邮箱吗？',
             deleteAccount: '删除邮箱',
@@ -122,8 +116,6 @@ const { t, locale } = useI18n({
     }
 });
 
-const showEmailCredential = ref(false)
-const curEmailCredential = ref("")
 const curDeleteAddressId = ref(0);
 const curClearInboxAddressId = ref(0);
 const curClearSentItemsAddressId = ref(0);
@@ -183,17 +175,6 @@ const tableScrollX = computed(() => {
 const showDeleteAccount = ref(false)
 const showClearInbox = ref(false)
 const showClearSentItems = ref(false)
-
-const showCredential = async (id) => {
-    try {
-        curEmailCredential.value = await api.adminShowAddressCredential(id)
-        showEmailCredential.value = true
-    } catch (error) {
-        message.error(error.message || "error");
-        showEmailCredential.value = false
-        curEmailCredential.value = ""
-    }
-}
 
 const deleteEmail = async () => {
     try {
@@ -558,15 +539,6 @@ const columns = [
                                     label: () => h(NButton,
                                         {
                                             text: true,
-                                            onClick: () => showCredential(row.id)
-                                        },
-                                        { default: () => t('showCredential') }
-                                    ),
-                                },
-                                {
-                                    label: () => h(NButton,
-                                        {
-                                            text: true,
                                             onClick: () => {
                                                 adminMailTabAddress.value = row.name;
                                                 router.push(getRouterPathWithLang('/admin/emails', locale.value));
@@ -676,19 +648,6 @@ onMounted(async () => {
 
 <template>
     <div style="margin-top: 10px;">
-        <n-modal v-model:show="showEmailCredential" preset="dialog" title="Dialog">
-            <template #header>
-                <div>{{ t("addressCredential") }}</div>
-            </template>
-            <span>
-                <p>{{ t("addressCredentialTip") }}</p>
-            </span>
-            <n-card :bordered="false" embedded>
-                <b>{{ curEmailCredential }}</b>
-            </n-card>
-            <template #action>
-            </template>
-        </n-modal>
         <n-modal v-model:show="showDeleteAccount" preset="dialog" :title="t('deleteAccount')">
             <p>{{ t('deleteTip') }}</p>
             <template #action>

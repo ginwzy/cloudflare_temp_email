@@ -55,6 +55,6 @@ services:
 
 Download [Thunderbird](https://www.thunderbird.net/en-US/)
 
-For password, enter the `email address credential`
+For password, enter the `address password` (requires address password feature enabled)
 
 ![imap](/feature/imap.png)

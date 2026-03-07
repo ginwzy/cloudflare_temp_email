@@ -18,10 +18,8 @@ const { t } = useI18n({
             creatNewEmail: 'Create New Email',
             fillInAllFields: 'Please fill in all fields',
             successTip: 'Success Created',
-            addressCredential: 'Mail Address Credential',
-            addressCredentialTip: 'Please copy the Mail Address Credential and you can use it to login to your email account.',
+            createdAddress: 'Created Address',
             addressPassword: 'Address Password',
-            linkWithAddressCredential: 'Open to auto login email link',
             tags: 'Tags',
             tagsTip: 'Press Enter to add tags (optional)',
         },
@@ -31,10 +29,8 @@ const { t } = useI18n({
             creatNewEmail: '创建新邮箱',
             fillInAllFields: '请填写完整信息',
             successTip: '创建成功',
-            addressCredential: '邮箱地址凭证',
-            addressCredentialTip: '请复制邮箱地址凭证，你可以使用它登录你的邮箱。',
+            createdAddress: '创建的地址',
             addressPassword: '地址密码',
-            linkWithAddressCredential: '打开即可自动登录邮箱的链接',
             tags: '标签',
             tagsTip: '按回车添加标签（可选）',
         }
@@ -46,7 +42,6 @@ const emailName = ref("")
 const emailDomain = ref("")
 const emailTags = ref([])
 const showReultModal = ref(false)
-const result = ref("")
 const addressPassword = ref("")
 const createdAddress = ref("")
 
@@ -65,7 +60,6 @@ const newEmail = async () => {
                 tags: emailTags.value.length > 0 ? emailTags.value : undefined,
             })
         })
-        result.value = res["jwt"];
         addressPassword.value = res["password"] || '';
         createdAddress.value = res["address"] || '';
         message.success(t('successTip'))
@@ -73,10 +67,6 @@ const newEmail = async () => {
     } catch (error) {
         message.error(error.message || "error");
     }
-}
-
-const getUrlWithJwt = () => {
-    return `${window.location.origin}/?jwt=${result.value}`
 }
 
 watch(
@@ -100,25 +90,10 @@ watch(
 
 <template>
     <div class="center">
-        <n-modal v-model:show="showReultModal" preset="dialog" :title="t('addressCredential')">
-            <span>
-                <p>{{ t("addressCredentialTip") }}</p>
-            </span>
+        <n-modal v-model:show="showReultModal" preset="dialog" :title="t('successTip')">
             <n-card embedded>
-                <b>{{ result }}</b>
-            </n-card>
-            <n-card embedded v-if="addressPassword">
-                <p><b>{{ createdAddress }}</b></p>
-                <p>{{ t('addressPassword') }}: <b>{{ addressPassword }}</b></p>
-            </n-card>
-            <n-card embedded>
-                <n-collapse>
-                    <n-collapse-item :title='t("linkWithAddressCredential")'>
-                        <n-card embedded>
-                            <b>{{ getUrlWithJwt() }}</b>
-                        </n-card>
-                    </n-collapse-item>
-                </n-collapse>
+                <p>{{ t('createdAddress') }}: <b>{{ createdAddress }}</b></p>
+                <p v-if="addressPassword">{{ t('addressPassword') }}: <b>{{ addressPassword }}</b></p>
             </n-card>
         </n-modal>
         <n-card :bordered="false" embedded style="max-width: 600px;">

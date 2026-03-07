@@ -47,7 +47,7 @@ const COMMANDS = [
     },
     {
         command: "bind",
-        description: "绑定邮箱, /bind <邮箱地址凭证> | Bind address, /bind <credential>"
+        description: "绑定邮箱, /bind <地址JWT令牌> | Bind address, /bind <address JWT token>"
     },
     {
         command: "unbind",
