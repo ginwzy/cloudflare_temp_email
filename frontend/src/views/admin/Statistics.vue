@@ -1,11 +1,12 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import {
   PersonOutlineRound, TrendingUpRound, PeopleRound,
   EmailRound, SendRound,
   ManageAccountsRound, SecurityRound, ForwardToInboxRound,
+  RefreshRound,
 } from '@vicons/material'
 import { use } from 'echarts/core'
 import { BarChart, PieChart } from 'echarts/charts'
@@ -60,6 +61,12 @@ const { t, locale } = useI18n({
       addressActivity: 'Address Activity',
       active: 'Active',
       inactive: 'Inactive',
+      autoRefresh: 'Auto Refresh',
+      refreshNow: 'Refresh',
+      refreshing: 'Refreshing',
+      nextRefresh: 'Next refresh in {n}s',
+      lastUpdated: 'Updated at {time}',
+      neverUpdated: 'Not updated yet',
     },
     zh: {
       addressCount: '地址总数',
@@ -97,6 +104,12 @@ const { t, locale } = useI18n({
       addressActivity: '地址活跃度',
       active: '活跃',
       inactive: '不活跃',
+      autoRefresh: '自动刷新',
+      refreshNow: '立即刷新',
+      refreshing: '刷新中',
+      nextRefresh: '{n}秒后刷新',
+      lastUpdated: '最近更新：{time}',
+      neverUpdated: '尚未更新',
     }
   }
 })
@@ -109,6 +122,14 @@ const dbInfo = ref(null)
 const workerConfig = ref(null)
 const dailyData = ref([])
 const loading = ref(true)
+const refreshing = ref(false)
+const autoRefreshEnabled = ref(true)
+const refreshCountdown = ref(30)
+const lastUpdatedAt = ref(0)
+const isFetching = ref(false)
+const AUTO_REFRESH_INTERVAL_SECONDS = 30
+let refreshTimer = null
+let countdownTimer = null
 
 const chartTextColor = computed(() => isDark.value ? '#94A3B8' : '#64748B')
 const chartBorderColor = computed(() => isDark.value ? '#334155' : '#E2E8F0')
@@ -240,7 +261,35 @@ const parseSubject = (mail) => {
   return mail.subject || mail.address || '-'
 }
 
-onMounted(async () => {
+const clearAutoRefreshTimers = () => {
+  if (refreshTimer) {
+    clearTimeout(refreshTimer)
+    refreshTimer = null
+  }
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
+  }
+}
+
+const startCountdown = () => {
+  refreshCountdown.value = AUTO_REFRESH_INTERVAL_SECONDS
+  if (!autoRefreshEnabled.value || document.hidden) return
+  countdownTimer = setInterval(() => {
+    if (refreshCountdown.value > 0) {
+      refreshCountdown.value -= 1
+    }
+  }, 1000)
+}
+
+const fetchDashboard = async ({ withLoading = false, silent = false } = {}) => {
+  if (isFetching.value) return false
+  isFetching.value = true
+  if (withLoading) {
+    loading.value = true
+  } else {
+    refreshing.value = true
+  }
   const silentRequest = (path) => api.fetch(path, { useGlobalLoading: false })
   try {
     const [statsData, mailsData, db, config, daily] = await Promise.all([
@@ -255,11 +304,76 @@ onMounted(async () => {
     dbInfo.value = db
     workerConfig.value = config
     dailyData.value = daily || []
+    lastUpdatedAt.value = Date.now()
+    return true
   } catch (e) {
-    message.error(e.message || 'error')
+    if (!silent) {
+      message.error(e.message || 'error')
+    }
+    return false
   } finally {
-    loading.value = false
+    isFetching.value = false
+    refreshing.value = false
+    if (withLoading) {
+      loading.value = false
+    }
   }
+}
+
+const restartAutoRefresh = () => {
+  clearAutoRefreshTimers()
+  startCountdown()
+  if (!autoRefreshEnabled.value || document.hidden) return
+  refreshTimer = setTimeout(async () => {
+    await fetchDashboard({ silent: true })
+    restartAutoRefresh()
+  }, AUTO_REFRESH_INTERVAL_SECONDS * 1000)
+}
+
+const manualRefresh = async () => {
+  await fetchDashboard()
+  restartAutoRefresh()
+}
+
+const lastUpdatedText = computed(() => {
+  if (!lastUpdatedAt.value) return t('neverUpdated')
+  const formatted = new Intl.DateTimeFormat(locale.value, {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).format(lastUpdatedAt.value)
+  return t('lastUpdated', { time: formatted })
+})
+
+const handleVisibilityChange = async () => {
+  if (document.hidden) {
+    clearAutoRefreshTimers()
+    return
+  }
+  if (!autoRefreshEnabled.value) return
+  await fetchDashboard({ silent: true })
+  restartAutoRefresh()
+}
+
+watch(autoRefreshEnabled, async (enabled) => {
+  if (enabled) {
+    await fetchDashboard({ silent: true })
+    restartAutoRefresh()
+  } else {
+    clearAutoRefreshTimers()
+  }
+})
+
+onMounted(async () => {
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+  await fetchDashboard({ withLoading: true })
+  restartAutoRefresh()
+})
+
+onBeforeUnmount(() => {
+  clearAutoRefreshTimers()
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 </script>
 
@@ -268,6 +382,27 @@ onMounted(async () => {
     <div v-if="loading" class="dashboard-loading-overlay">
       <div class="dashboard-loading-content">
         <n-spin size="large" />
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <span class="toolbar-status">{{ lastUpdatedText }}</span>
+      <div class="toolbar-actions">
+        <span v-if="autoRefreshEnabled" class="refresh-countdown">
+          {{ t('nextRefresh', { n: refreshCountdown }) }}
+        </span>
+        <n-switch v-model:value="autoRefreshEnabled" size="small">
+          <template #checked>{{ t('autoRefresh') }}</template>
+          <template #unchecked>{{ t('autoRefresh') }}</template>
+        </n-switch>
+        <n-button size="small" tertiary @click="manualRefresh" :loading="refreshing">
+          <template #icon>
+            <n-icon>
+              <RefreshRound />
+            </n-icon>
+          </template>
+          {{ refreshing ? t('refreshing') : t('refreshNow') }}
+        </n-button>
       </div>
     </div>
 
@@ -400,6 +535,26 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.toolbar-status {
+  font-size: 12px;
+  color: var(--ds-text-secondary);
+}
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.refresh-countdown {
+  font-size: 12px;
+  color: var(--ds-text-secondary);
 }
 .dashboard-loading-overlay {
   position: absolute;
@@ -700,6 +855,13 @@ onMounted(async () => {
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
+  .toolbar {
+    align-items: flex-start;
+  }
+  .toolbar-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
