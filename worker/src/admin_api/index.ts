@@ -291,6 +291,7 @@ api.get('/admin/tag_statistics', async (c) => {
 // mail api
 api.get('/admin/mails', admin_mail_api.getMails);
 api.get('/admin/mails_unknow', admin_mail_api.getUnknowMails);
+api.get('/admin/mails/:id', admin_mail_api.getMail);
 api.delete('/admin/mails/:id', admin_mail_api.deleteMail)
 
 api.get('/admin/address_sender', async (c) => {
@@ -370,24 +371,24 @@ api.delete('/admin/sendbox/:id', async (c) => {
 })
 
 api.get('/admin/statistics', async (c) => {
-    const { count: mailCount } = await c.env.DB.prepare(
-        `SELECT count(*) as count FROM raw_mails`
-    ).first<{ count: number }>() || {};
-    const { count: addressCount } = await c.env.DB.prepare(
-        `SELECT count(*) as count FROM address`
-    ).first<{ count: number }>() || {};
-    const { count: activeAddressCount7days } = await c.env.DB.prepare(
-        `SELECT count(*) as count FROM address where updated_at > datetime('now', '-7 day')`
-    ).first<{ count: number }>() || {};
-    const { count: activeAddressCount30days } = await c.env.DB.prepare(
-        `SELECT count(*) as count FROM address where updated_at > datetime('now', '-30 day')`
-    ).first<{ count: number }>() || {};
-    const { count: sendMailCount } = await c.env.DB.prepare(
-        `SELECT count(*) as count FROM sendbox`
-    ).first<{ count: number }>() || {};
-    const { count: userCount } = await c.env.DB.prepare(
-        `SELECT count(*) as count FROM users`
-    ).first<{ count: number }>() || {};
+    const [mailRow, addressRow, active7Row, active30Row, sendRow, userRow] = await Promise.all([
+        c.env.DB.prepare(`SELECT count(*) as count FROM raw_mails`).first<{ count: number }>(),
+        c.env.DB.prepare(`SELECT count(*) as count FROM address`).first<{ count: number }>(),
+        c.env.DB.prepare(
+            `SELECT count(*) as count FROM address where updated_at > datetime('now', '-7 day')`
+        ).first<{ count: number }>(),
+        c.env.DB.prepare(
+            `SELECT count(*) as count FROM address where updated_at > datetime('now', '-30 day')`
+        ).first<{ count: number }>(),
+        c.env.DB.prepare(`SELECT count(*) as count FROM sendbox`).first<{ count: number }>(),
+        c.env.DB.prepare(`SELECT count(*) as count FROM users`).first<{ count: number }>(),
+    ]);
+    const mailCount = mailRow?.count || 0;
+    const addressCount = addressRow?.count || 0;
+    const activeAddressCount7days = active7Row?.count || 0;
+    const activeAddressCount30days = active30Row?.count || 0;
+    const sendMailCount = sendRow?.count || 0;
+    const userCount = userRow?.count || 0;
     return c.json({
         mailCount: mailCount,
         addressCount: addressCount,
@@ -400,20 +401,39 @@ api.get('/admin/statistics', async (c) => {
 
 api.get('/admin/statistics/daily', async (c) => {
     const days = 7;
+    const [receivedRows, sentRows] = await Promise.all([
+        c.env.DB.prepare(
+            `SELECT strftime('%m-%d', created_at) as date, count(*) as count`
+            + ` FROM raw_mails`
+            + ` WHERE created_at > datetime('now', '-${days} day')`
+            + ` GROUP BY strftime('%m-%d', created_at)`
+        ).all<{ date: string, count: number }>(),
+        c.env.DB.prepare(
+            `SELECT strftime('%m-%d', created_at) as date, count(*) as count`
+            + ` FROM sendbox`
+            + ` WHERE created_at > datetime('now', '-${days} day')`
+            + ` GROUP BY strftime('%m-%d', created_at)`
+        ).all<{ date: string, count: number }>(),
+    ]);
+
+    const receivedMap = new Map<string, number>();
+    for (const row of receivedRows.results || []) {
+        receivedMap.set(row.date, row.count || 0);
+    }
+    const sentMap = new Map<string, number>();
+    for (const row of sentRows.results || []) {
+        sentMap.set(row.date, row.count || 0);
+    }
+
     const results = [];
     for (let i = days - 1; i >= 0; i--) {
-        const { count: received } = await c.env.DB.prepare(
-            `SELECT count(*) as count FROM raw_mails where created_at > datetime('now', '-${i + 1} day') and created_at <= datetime('now', '-${i} day')`
-        ).first<{ count: number }>() || { count: 0 };
-        const { count: sent } = await c.env.DB.prepare(
-            `SELECT count(*) as count FROM sendbox where created_at > datetime('now', '-${i + 1} day') and created_at <= datetime('now', '-${i} day')`
-        ).first<{ count: number }>() || { count: 0 };
         const date = new Date();
         date.setDate(date.getDate() - i);
+        const dateKey = date.toISOString().slice(5, 10);
         results.push({
-            date: date.toISOString().slice(5, 10),
-            received: received || 0,
-            sent: sent || 0,
+            date: dateKey,
+            received: receivedMap.get(dateKey) || 0,
+            sent: sentMap.get(dateKey) || 0,
         });
     }
     return c.json(results);

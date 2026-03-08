@@ -6,7 +6,6 @@ import { newAddress, handleListQuery, deleteAddressWithData, getAddressPrefix, g
 import { CONSTANTS } from '../constants'
 import auto_reply from './auto_reply'
 import webhook_settings from './webhook_settings';
-import s3_attachment from './s3_attachment';
 import address_auth from './address_auth';
 
 export const api = new Hono<HonoCustomType>()
@@ -16,20 +15,36 @@ api.post('/api/auto_reply', auto_reply.saveAutoReply)
 api.get('/api/webhook/settings', webhook_settings.getWebhookSettings)
 api.post('/api/webhook/settings', webhook_settings.saveWebhookSettings)
 api.post('/api/webhook/test', webhook_settings.testWebhookSettings)
-api.get('/api/attachment/list', s3_attachment.list)
-api.post('/api/attachment/delete', s3_attachment.deleteKey)
-api.post('/api/attachment/put_url', s3_attachment.getSignedPutUrl)
-api.post('/api/attachment/get_url', s3_attachment.getSignedGetUrl)
+api.get('/api/attachment/list', async (c) => {
+    const s3_attachment = (await import('./s3_attachment')).default;
+    return s3_attachment.list(c);
+});
+api.post('/api/attachment/delete', async (c) => {
+    const s3_attachment = (await import('./s3_attachment')).default;
+    return s3_attachment.deleteKey(c);
+});
+api.post('/api/attachment/put_url', async (c) => {
+    const s3_attachment = (await import('./s3_attachment')).default;
+    return s3_attachment.getSignedPutUrl(c);
+});
+api.post('/api/attachment/get_url', async (c) => {
+    const s3_attachment = (await import('./s3_attachment')).default;
+    return s3_attachment.getSignedGetUrl(c);
+});
 
 api.get('/api/mails', async (c) => {
     const { address } = c.get("jwtPayload")
     if (!address) {
         return c.json({ "error": "No address" }, 400)
     }
-    const { limit, offset } = c.req.query();
+    const { limit, offset, summary } = c.req.query();
+    const isSummary = summary === '1' || summary === 'true';
+    const selectFields = isSummary
+        ? `id, message_id, source, address, metadata, created_at`
+        : `*`;
     if (Number.parseInt(offset) <= 0) updateAddressUpdatedAt(c, address);
     return await handleListQuery(c,
-        `SELECT * FROM raw_mails where address = ?`,
+        `SELECT ${selectFields} FROM raw_mails where address = ?`,
         `SELECT count(*) as count FROM raw_mails where address = ?`,
         [address], limit, offset
     );

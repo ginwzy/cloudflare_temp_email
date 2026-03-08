@@ -2,13 +2,20 @@ import { Hono } from 'hono'
 import { ServerResponse } from 'node:http'
 import { Writable } from 'node:stream'
 
-import { newTelegramBot, initTelegramBotCommands, sendMailToTelegram } from './telegram'
 import settings from './settings'
 import miniapp from './miniapp'
 import i18n from '../i18n'
 
 export const api = new Hono<HonoCustomType>();
-export { sendMailToTelegram }
+export const sendMailToTelegram = async (
+    c: any,
+    address: string,
+    parsedEmailContext: ParsedEmailContext,
+    message_id: string | null
+) => {
+    const telegramModule = await import('./telegram');
+    return telegramModule.sendMailToTelegram(c, address, parsedEmailContext, message_id);
+}
 
 api.use("/telegram/*", async (c, next) => {
     const msgs = i18n.getMessagesbyContext(c);
@@ -33,6 +40,7 @@ api.use("/admin/telegram/*", async (c, next) => {
 });
 
 api.post("/telegram/webhook", async (c) => {
+    const { newTelegramBot } = await import('./telegram');
     const token = c.env.TELEGRAM_BOT_TOKEN;
     const bot = newTelegramBot(c, token);
     let body = null;
@@ -48,6 +56,7 @@ api.post("/telegram/webhook", async (c) => {
 });
 
 api.post("/admin/telegram/init", async (c) => {
+    const { newTelegramBot, initTelegramBotCommands } = await import('./telegram');
     const domain = new URL(c.req.url).host;
     const token = c.env.TELEGRAM_BOT_TOKEN;
     const webhookUrl = `https://${domain}/telegram/webhook`;
@@ -61,6 +70,7 @@ api.post("/admin/telegram/init", async (c) => {
 });
 
 api.get("/admin/telegram/status", async (c) => {
+    const { newTelegramBot } = await import('./telegram');
     const token = c.env.TELEGRAM_BOT_TOKEN;
     const bot = newTelegramBot(c, token);
     const info = await bot.telegram.getWebhookInfo()

@@ -7,7 +7,12 @@ const fetchMailUnknowData = async (limit, offset) => {
         `/admin/mails_unknow`
         + `?limit=${limit}`
         + `&offset=${offset}`
+        + `&summary=1`
     );
+}
+
+const fetchMailDetail = async (mailId) => {
+    return await api.fetch(`/admin/mails/${mailId}`);
 }
 
 const deleteMail = async (curMailId) => {
@@ -17,6 +22,7 @@ const deleteMail = async (curMailId) => {
 
 <template>
     <div style="margin-top: 10px;">
-        <MailBox :enableUserDeleteEmail="true" :fetchMailData="fetchMailUnknowData" :deleteMail="deleteMail" />
+        <MailBox :enableUserDeleteEmail="true" :fetchMailData="fetchMailUnknowData"
+            :fetchMailDetail="fetchMailDetail" :deleteMail="deleteMail" />
     </div>
 </template>

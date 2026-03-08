@@ -5,7 +5,11 @@ import UserBindAddressModule from "./bind_address";
 export default {
     getMails: async (c: Context<HonoCustomType>) => {
         const { user_id } = c.get("userPayload");
-        const { address, limit, offset } = c.req.query();
+        const { address, limit, offset, summary } = c.req.query();
+        const isSummary = summary === '1' || summary === 'true';
+        const selectFields = isSummary
+            ? `id, message_id, source, address, metadata, created_at`
+            : `*`;
         const bindedAddressList = await UserBindAddressModule.getBindedAddressListById(c, user_id);
         const addressList = address ? bindedAddressList.filter((item) => item == address) : bindedAddressList;
         const addressQuery = `address IN (${addressList.map(() => "?").join(",")})`;
@@ -20,15 +24,31 @@ export default {
         const finalQuery = filterQuerys.length > 0 ? `where ${filterQuerys}` : "";
         const filterParams = [...addressParams]
         return await handleListQuery(c,
-            `SELECT * FROM raw_mails ${finalQuery}`,
+            `SELECT ${selectFields} FROM raw_mails ${finalQuery}`,
             `SELECT count(*) as count FROM raw_mails ${finalQuery}`,
             filterParams, limit, offset
         );
+    },
+    getMail: async (c: Context<HonoCustomType>) => {
+        const { id } = c.req.param();
+        const { user_id } = c.get("userPayload");
+        const bindedAddressList = await UserBindAddressModule.getBindedAddressListById(c, user_id);
+        if (bindedAddressList.length <= 0) {
+            return c.json(null, 404);
+        }
+        const result = await c.env.DB.prepare(
+            `SELECT * FROM raw_mails WHERE id = ?`
+            + ` and address IN (${bindedAddressList.map(() => "?").join(",")})`
+        ).bind(id, ...bindedAddressList).first();
+        return c.json(result || null);
     },
     deleteMail: async (c: Context<HonoCustomType>) => {
         const { id } = c.req.param();
         const { user_id } = c.get("userPayload");
         const bindedAddressList = await UserBindAddressModule.getBindedAddressListById(c, user_id);
+        if (bindedAddressList.length <= 0) {
+            return c.json({ success: false });
+        }
         const { success } = await c.env.DB.prepare(
             `DELETE FROM raw_mails WHERE id = ?`
             + ` and address IN (${bindedAddressList.map(() => "?").join(",")})`

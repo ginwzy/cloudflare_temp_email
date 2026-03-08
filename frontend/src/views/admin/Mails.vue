@@ -33,8 +33,13 @@ const fetchMailData = async (limit, offset) => {
         `/admin/mails`
         + `?limit=${limit}`
         + `&offset=${offset}`
+        + `&summary=1`
         + (adminMailTabAddress.value ? `&address=${adminMailTabAddress.value}` : '')
     );
+}
+
+const fetchMailDetail = async (mailId) => {
+    return await api.fetch(`/admin/mails/${mailId}`);
 }
 
 const deleteMail = async (curMailId) => {
@@ -53,6 +58,7 @@ const deleteMail = async (curMailId) => {
         </n-input-group>
         <div style="margin-top: 10px;"></div>
         <MailBox :key="mailBoxKey" :enableUserDeleteEmail="true" :fetchMailData="fetchMailData"
+            :fetchMailDetail="fetchMailDetail"
             :deleteMail="deleteMail" :showFilterInput="true" />
     </div>
 </template>

@@ -1,8 +1,7 @@
 import { Context, Hono } from 'hono'
 import { Jwt } from 'hono/utils/jwt'
 import { createMimeMessage } from 'mimetext';
-import { Resend } from 'resend';
-import { WorkerMailer, WorkerMailerOptions } from 'worker-mailer';
+import type { WorkerMailerOptions } from 'worker-mailer';
 
 import i18n from '../i18n';
 import { CONSTANTS } from '../constants'
@@ -70,6 +69,7 @@ const sendMailByResend = async (
         subject: string, content: string, is_html: boolean
     }
 ): Promise<void> => {
+    const { Resend } = await import('resend');
     const mailDomain = address.split("@")[1];
     const token = c.env[
         `RESEND_TOKEN_${mailDomain.replace(/\./g, "_").toUpperCase()}`
@@ -99,6 +99,7 @@ const sendMailBySmtp = async (
     },
     smtpOptions: WorkerMailerOptions
 ): Promise<void> => {
+    const { WorkerMailer } = await import('worker-mailer');
     await WorkerMailer.send(
         smtpOptions,
         {

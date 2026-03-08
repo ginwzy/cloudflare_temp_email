@@ -1,10 +1,10 @@
 <script setup>
-import { ref } from "vue";
+import { ref, watch, onBeforeUnmount } from "vue";
 import { useI18n } from 'vue-i18n'
 import { CloudDownloadRound, ReplyFilled, ForwardFilled, FullscreenRound } from '@vicons/material'
 import ShadowHtmlComponent from "./ShadowHtmlComponent.vue";
 import AiExtractInfo from "./AiExtractInfo.vue";
-import { getDownloadEmlUrl } from '../utils/email-parser';
+import { getDownloadEmlUrl, revokeMailObjectUrls } from '../utils/email-parser';
 import { utcToLocalDate } from '../utils';
 import { useGlobalState } from '../store';
 
@@ -86,6 +86,7 @@ const showAttachments = ref(false);
 const curAttachments = ref([]);
 const attachmentLoding = ref(false);
 const showFullscreen = ref(false);
+const downloadMailUrl = ref('');
 
 const handleDelete = () => {
   props.onDelete();
@@ -113,6 +114,36 @@ const handleSaveToS3 = async (filename, blob) => {
     attachmentLoding.value = false;
   }
 };
+
+const refreshDownloadUrl = () => {
+  if (downloadMailUrl.value) {
+    try {
+      URL.revokeObjectURL(downloadMailUrl.value);
+    } catch {
+      // Ignore invalid URL errors.
+    }
+  }
+  downloadMailUrl.value = props.mail?.raw ? getDownloadEmlUrl(props.mail.raw) : '';
+};
+
+watch(
+  () => props.mail?.id,
+  () => {
+    refreshDownloadUrl();
+  },
+  { immediate: true }
+);
+
+onBeforeUnmount(() => {
+  if (downloadMailUrl.value) {
+    try {
+      URL.revokeObjectURL(downloadMailUrl.value);
+    } catch {
+      // Ignore invalid URL errors.
+    }
+  }
+  revokeMailObjectUrls(props.mail);
+});
 
 </script>
 
@@ -147,7 +178,7 @@ const handleSaveToS3 = async (filename, blob) => {
       </n-button>
 
       <n-button tag="a" target="_blank" tertiary type="info" size="small" :download="mail.id + '.eml'"
-        :href="getDownloadEmlUrl(mail.raw)">
+        :href="downloadMailUrl">
         <template #icon>
           <n-icon :component="CloudDownloadRound" />
         </template>

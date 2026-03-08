@@ -6,7 +6,7 @@ import { useRouter } from 'vue-router'
 import { useGlobalState } from '../store'
 import { CloudDownloadRound, ArrowBackIosNewFilled, ArrowForwardIosFilled, InboxRound, RefreshRound } from '@vicons/material'
 import { useIsMobile } from '../utils/composables'
-import { processItem } from '../utils/email-parser'
+import { processItem, revokeMailObjectUrls } from '../utils/email-parser'
 import { utcToLocalDate } from '../utils';
 import MailContentRenderer from "./MailContentRenderer.vue";
 import AiExtractInfo from "./AiExtractInfo.vue";
@@ -30,6 +30,11 @@ const props = defineProps({
     type: Function,
     default: () => { },
     required: true
+  },
+  fetchMailDetail: {
+    type: Function,
+    default: null,
+    required: false
   },
   deleteMail: {
     type: Function,
@@ -61,12 +66,15 @@ const props = defineProps({
 const localFilterKeyword = ref('')
 
 const {
-  isDark, mailboxSplitSize, loading, useUTCDate,
+  mailboxSplitSize, loading, useUTCDate,
   autoRefresh, configAutoRefreshInterval, sendMailModel
 } = useGlobalState()
 const autoRefreshInterval = ref(configAutoRefreshInterval.value)
 const rawData = ref([])
 const timer = ref(null)
+const selectedMailId = ref(null)
+const detailLoading = ref(false)
+let detailRequestSerial = 0
 
 const count = ref(0)
 const page = ref(1)
@@ -79,9 +87,11 @@ const data = computed(() => {
   }
   const keyword = localFilterKeyword.value.toLowerCase();
   return rawData.value.filter(mail => {
-    // Search in subject, text, message fields
+    // Search in summary fields first, and detail fields when available.
     const searchFields = [
       mail.subject || '',
+      mail.source || '',
+      mail.address || '',
       mail.text || '',
       mail.message || ''
     ].map(field => field.toLowerCase());
@@ -90,48 +100,100 @@ const data = computed(() => {
 })
 
 const canGoPrevMail = computed(() => {
-  if (!curMail.value) return false
-  const currentIndex = data.value.findIndex(mail => mail.id === curMail.value.id)
+  if (!selectedMailId.value) return false
+  const currentIndex = data.value.findIndex(mail => mail.id === selectedMailId.value)
   return currentIndex > 0 || page.value > 1
 })
 
 const canGoNextMail = computed(() => {
-  if (!curMail.value) return false
-  const currentIndex = data.value.findIndex(mail => mail.id === curMail.value.id)
+  if (!selectedMailId.value) return false
+  const currentIndex = data.value.findIndex(mail => mail.id === selectedMailId.value)
   return currentIndex < data.value.length - 1 || count.value > page.value * pageSize.value
 })
 
+const curMail = ref(null);
+const showMobileMailDrawer = computed({
+  get: () => !!curMail.value,
+  set: (show) => {
+    if (!show) {
+      setCurrentMail(null);
+    }
+  }
+})
+
+const setCurrentMail = (mail) => {
+  if (curMail.value) {
+    revokeMailObjectUrls(curMail.value);
+  }
+  curMail.value = mail;
+}
+
+const getMailDetailById = async (id, fallback) => {
+  if (typeof props.fetchMailDetail === 'function') {
+    return await props.fetchMailDetail(id);
+  }
+  return fallback?.raw ? fallback : null;
+}
+
+const openMail = async (row) => {
+  if (!row?.id) return;
+  selectedMailId.value = row.id;
+  detailLoading.value = true;
+  const requestId = ++detailRequestSerial;
+  try {
+    const mailDetail = await getMailDetailById(row.id, row);
+    if (!mailDetail) {
+      if (requestId === detailRequestSerial) {
+        setCurrentMail(null);
+      }
+      return;
+    }
+    const parsedMail = mailDetail.raw
+      ? await processItem({ ...mailDetail, checked: row.checked })
+      : { ...mailDetail, checked: row.checked };
+    if (requestId !== detailRequestSerial) {
+      revokeMailObjectUrls(parsedMail);
+      return;
+    }
+    setCurrentMail(parsedMail);
+  } catch (error) {
+    message.error(error.message || "error");
+  } finally {
+    if (requestId === detailRequestSerial) {
+      detailLoading.value = false;
+    }
+  }
+}
+
 const prevMail = async () => {
   if (!canGoPrevMail.value) return
-  const currentIndex = data.value.findIndex(mail => mail.id === curMail.value.id)
+  const currentIndex = data.value.findIndex(mail => mail.id === selectedMailId.value)
 
   if (currentIndex > 0) {
-    curMail.value = data.value[currentIndex - 1]
+    await openMail(data.value[currentIndex - 1])
   } else if (page.value > 1) {
     page.value--
     await refresh()
     if (data.value.length > 0) {
-      curMail.value = data.value[data.value.length - 1]
+      await openMail(data.value[data.value.length - 1])
     }
   }
 }
 
 const nextMail = async () => {
   if (!canGoNextMail.value) return
-  const currentIndex = data.value.findIndex(mail => mail.id === curMail.value.id)
+  const currentIndex = data.value.findIndex(mail => mail.id === selectedMailId.value)
 
   if (currentIndex < data.value.length - 1) {
-    curMail.value = data.value[currentIndex + 1]
+    await openMail(data.value[currentIndex + 1])
   } else if (count.value > page.value * pageSize.value) {
     page.value++
     await refresh()
     if (data.value.length > 0) {
-      curMail.value = data.value[0]
+      await openMail(data.value[0])
     }
   }
 }
-
-const curMail = ref(null);
 
 const multiActionMode = ref(false)
 const showMultiActionDownload = ref(false)
@@ -245,21 +307,24 @@ watch([page, pageSize], async ([page, pageSize], [oldPage, oldPageSize]) => {
 })
 
 const refresh = async () => {
+  detailRequestSerial += 1;
+  detailLoading.value = false;
+  loading.value = true;
   try {
     const { results, count: totalCount } = await props.fetchMailData(
       pageSize.value, (page.value - 1) * pageSize.value
     );
-    loading.value = true;
-    rawData.value = await Promise.all(results.map(async (item) => {
-      item.checked = false;
-      return await processItem(item);
+    rawData.value = results.map((item) => ({
+      ...item,
+      checked: false,
     }));
-    if (totalCount > 0) {
+    if (typeof totalCount === 'number') {
       count.value = totalCount;
     }
-    curMail.value = null;
+    selectedMailId.value = null;
+    setCurrentMail(null);
     if (!isMobile.value && data.value.length > 0) {
-      curMail.value = data.value[0];
+      await openMail(data.value[0]);
     }
   } catch (error) {
     message.error(error.message || "error");
@@ -279,19 +344,15 @@ const clickRow = async (row) => {
     row.checked = !row.checked;
     return;
   }
-  curMail.value = row;
-};
-
-
-const mailItemClass = (row) => {
-  return curMail.value && row.id == curMail.value.id ? (isDark.value ? 'overlay overlay-dark-backgroud' : 'overlay overlay-light-backgroud') : '';
+  await openMail(row);
 };
 
 const deleteMail = async () => {
   try {
     await props.deleteMail(curMail.value.id);
     message.success(t("success"));
-    curMail.value = null;
+    selectedMailId.value = null;
+    setCurrentMail(null);
     await refresh();
   } catch (error) {
     message.error(error.message || "error");
@@ -325,10 +386,6 @@ const forwardMail = async () => {
   });
   router.push('/compose');
 };
-
-const onSpiltSizeChange = (size) => {
-  mailboxSplitSize.value = size;
-}
 
 const saveToS3Proxy = async (filename, blob) => {
   await props.saveToS3(curMail.value.id, filename, blob);
@@ -384,6 +441,20 @@ const multiActionDeleteMail = async () => {
   }
 }
 
+const getMailRawForDownload = async (mail) => {
+  if (mail?.raw) {
+    return mail.raw;
+  }
+  if (typeof props.fetchMailDetail !== 'function') {
+    throw new Error('Mail detail is unavailable');
+  }
+  const detail = await props.fetchMailDetail(mail.id);
+  if (!detail?.raw) {
+    throw new Error('Mail raw data is unavailable');
+  }
+  return detail.raw;
+}
+
 const multiActionDownload = async () => {
   try {
     loading.value = true;
@@ -396,7 +467,15 @@ const multiActionDownload = async () => {
     const JSZip = JSZipModlue.default;
     const zip = new JSZip();
     for (const mail of selectedMails) {
-      zip.file(`${mail.id}.eml`, mail.raw);
+      const raw = await getMailRawForDownload(mail);
+      zip.file(`${mail.id}.eml`, raw);
+    }
+    if (multiActionDownloadZip.value.url) {
+      try {
+        URL.revokeObjectURL(multiActionDownloadZip.value.url);
+      } catch {
+        // Ignore invalid URL errors.
+      }
     }
     multiActionDownloadZip.value = {
       url: URL.createObjectURL(await zip.generateAsync({ type: "blob" })),
@@ -415,7 +494,16 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  detailRequestSerial += 1;
   clearInterval(timer.value)
+  setCurrentMail(null)
+  if (multiActionDownloadZip.value.url) {
+    try {
+      URL.revokeObjectURL(multiActionDownloadZip.value.url);
+    } catch {
+      // Ignore invalid URL errors.
+    }
+  }
 })
 </script>
 
@@ -472,7 +560,7 @@ onBeforeUnmount(() => {
         <div class="mail-list-panel" :style="{ flex: `0 0 ${mailboxSplitSize * 100}%` }">
           <div class="mail-list-scroll">
             <div v-for="row in data" :key="row.id" @click="() => clickRow(row)"
-              class="mail-row" :class="{ 'mail-row-active': curMail && row.id === curMail.id }">
+              class="mail-row" :class="{ 'mail-row-active': selectedMailId && row.id === selectedMailId }">
               <n-checkbox v-if="multiActionMode" v-model:checked="row.checked" style="margin-right: 8px;" />
               <div class="mail-avatar" :style="{ background: getAvatarColor(row.source) }">
                 {{ getSenderInitial(row.source) }}
@@ -505,7 +593,10 @@ onBeforeUnmount(() => {
               </n-button>
             </n-flex>
           </div>
-          <div v-if="curMail" class="mail-detail-scroll">
+          <div v-if="detailLoading" class="mail-empty">
+            <n-spin size="small" />
+          </div>
+          <div v-else-if="curMail" class="mail-detail-scroll">
             <h3 style="margin: 0 0 12px 0;">{{ curMail.subject }}</h3>
             <MailContentRenderer :mail="curMail" :showEMailTo="showEMailTo"
               :enableUserDeleteEmail="enableUserDeleteEmail" :showReply="showReply" :showSaveS3="showSaveS3"
@@ -551,7 +642,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
       </div>
-      <n-drawer v-model:show="curMail" width="100%" placement="bottom" :trap-focus="false" :block-scroll="false"
+      <n-drawer v-model:show="showMobileMailDrawer" width="100%" placement="bottom" :trap-focus="false" :block-scroll="false"
         style="height: 80vh;">
         <n-drawer-content :title="curMail ? curMail.subject : ''" closable>
           <n-card :bordered="false" embedded style="overflow: auto;">

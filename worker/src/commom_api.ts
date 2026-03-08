@@ -1,11 +1,19 @@
-import { Hono } from 'hono'
+import { Context, Hono } from 'hono'
 
 import utils from './utils';
 import { CONSTANTS } from './constants';
-import { isS3Enabled } from './mails_api/s3_attachment';
 import { isAnySendMailEnabled } from './common';
 
 const api = new Hono<HonoCustomType>
+
+const isS3Enabled = (c: Context<HonoCustomType>) => {
+    return !!(
+        c.env.S3_ENDPOINT
+        && c.env.S3_ACCESS_KEY_ID
+        && c.env.S3_SECRET_ACCESS_KEY
+        && c.env.S3_BUCKET
+    );
+}
 
 api.get('/open_api/settings', async (c) => {
     // check header x-custom-auth

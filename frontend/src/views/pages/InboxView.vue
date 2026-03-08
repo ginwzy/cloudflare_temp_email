@@ -20,7 +20,11 @@ const fetchMailData = async (limit, offset) => {
     if (singleMail) return { results: [singleMail], count: 1 }
     return { results: [], count: 0 }
   }
-  return await api.fetch(`/api/mails?limit=${limit}&offset=${offset}`)
+  return await api.fetch(`/api/mails?limit=${limit}&offset=${offset}&summary=1`)
+}
+
+const fetchMailDetail = async (mailId) => {
+  return await api.fetch(`/api/mail/${mailId}`)
 }
 
 const deleteMail = async (curMailId) => {
@@ -74,7 +78,8 @@ onMounted(() => {
       <MailBox :key="mailBoxKey" :showEMailTo="false" :showReply="openSettings.enableSendMail"
         :showSaveS3="openSettings.isS3Enabled" :saveToS3="saveToS3"
         :enableUserDeleteEmail="openSettings.enableUserDeleteEmail"
-        :fetchMailData="fetchMailData" :deleteMail="deleteMail" :showFilterInput="true" />
+        :fetchMailData="fetchMailData" :fetchMailDetail="fetchMailDetail"
+        :deleteMail="deleteMail" :showFilterInput="true" />
     </div>
   </div>
 </template>

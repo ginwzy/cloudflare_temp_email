@@ -294,7 +294,7 @@ const fetchDashboard = async ({ withLoading = false, silent = false } = {}) => {
   try {
     const [statsData, mailsData, db, config, daily] = await Promise.all([
       silentRequest('/admin/statistics'),
-      silentRequest('/admin/mails?limit=5&offset=0').catch(() => null),
+      silentRequest('/admin/mails?limit=5&offset=0&summary=1').catch(() => null),
       silentRequest('/admin/db_version').catch(() => null),
       silentRequest('/admin/worker/configs').catch(() => null),
       silentRequest('/admin/statistics/daily').catch(() => []),

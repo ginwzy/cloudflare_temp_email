@@ -6,6 +6,8 @@ function humanFileSize(size) {
 }
 
 export async function processItem(item) {
+    revokeMailObjectUrls(item);
+    item.__objectUrls = [];
     // Try to parse the email using mail-parser-wasm
     item.originalSource = item.source;
     try {
@@ -21,6 +23,7 @@ export async function processItem(item) {
                 { type: a_item.content_type || 'application/octet-stream' }
             );
             const blob_url = URL.createObjectURL(blob);
+            item.__objectUrls.push(blob_url);
             if (a_item.content_id && a_item.content_id.length > 0) {
                 item.message = item.message.replace(`cid:${a_item.content_id}`, blob_url);
             }
@@ -55,6 +58,7 @@ export async function processItem(item) {
                 { type: a_item.mimeType || 'application/octet-stream' }
             );
             const blob_url = URL.createObjectURL(blob)
+            item.__objectUrls.push(blob_url);
             if (a_item.contentId && a_item.contentId.length > 0) {
                 item.message = item.message.replace(`cid:${a_item.contentId}`, blob_url);
             }
@@ -73,6 +77,39 @@ export async function processItem(item) {
         item.message = item.raw;
     }
     return item;
+}
+
+export function revokeMailObjectUrls(mail) {
+    if (!mail) return;
+    const attachments = Array.isArray(mail.attachments) ? mail.attachments : [];
+    for (const attachment of attachments) {
+        if (attachment?.url) {
+            try {
+                URL.revokeObjectURL(attachment.url);
+            } catch {
+                // Ignore invalid URL errors.
+            }
+        }
+    }
+    if (Array.isArray(mail.__objectUrls)) {
+        for (const url of mail.__objectUrls) {
+            if (!url) continue;
+            try {
+                URL.revokeObjectURL(url);
+            } catch {
+                // Ignore invalid URL errors.
+            }
+        }
+    }
+    if (mail.downloadUrl) {
+        try {
+            URL.revokeObjectURL(mail.downloadUrl);
+        } catch {
+            // Ignore invalid URL errors.
+        }
+    }
+    delete mail.__objectUrls;
+    delete mail.downloadUrl;
 }
 
 export function getDownloadEmlUrl(raw) {
