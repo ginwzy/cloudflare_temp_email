@@ -111,7 +111,8 @@ type Variables = {
     userRolePayload: string | undefined | null,
     jwtPayload: JwtPayload,
     lang: string | undefined | null,
-    apiKeyId: number
+    apiKeyId: number,
+    requestId: string
 }
 
 type HonoCustomType = {

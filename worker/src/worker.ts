@@ -20,6 +20,7 @@ import { checkAccessControl } from './ip_blacklist';
 const API_PATHS = [
 	"/api/",
 	"/open_api/",
+	"/v1/",
 	"/user_api/",
 	"/admin/",
 	"/telegram/",
@@ -63,7 +64,11 @@ app.use('/*', async (c, next) => {
 
 	// check header x-custom-auth
 	const passwords = getPasswords(c);
-	if (!c.req.path.startsWith("/open_api") && !c.req.path.startsWith("/telegram/") && passwords && passwords.length > 0) {
+	if (!c.req.path.startsWith("/open_api")
+		&& !c.req.path.startsWith("/v1/")
+		&& !c.req.path.startsWith("/telegram/")
+		&& passwords && passwords.length > 0
+	) {
 		const auth = c.req.raw.headers.get("x-custom-auth");
 		if (!auth || !passwords.includes(auth)) {
 			return c.text(msgs.CustomAuthPasswordMsg, 401)

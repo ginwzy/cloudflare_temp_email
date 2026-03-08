@@ -21,6 +21,7 @@ const { t } = useI18n({
             create: 'Create API Key',
             keyName: 'Key Name',
             maxCalls: 'Max Calls',
+            unlimited: 'Unlimited',
             delete: 'Delete',
             deleteTip: 'Are you sure to delete this API key?',
             resetUsage: 'Reset Usage',
@@ -34,7 +35,7 @@ const { t } = useI18n({
             newKeyTitle: 'API Key Created',
             itemCount: 'Total',
             docTitle: 'API Usage Guide',
-            docDesc: 'Use API Key to call the following endpoints programmatically. All requests require the x-api-key header. Each call consumes 1 quota.',
+            docDesc: 'Use API Key to call /v1 endpoints. All requests require x-api-key. Create endpoint supports optional Idempotency-Key.',
             docAuth: 'Authentication',
             docAuthDesc: 'Add the following header to all requests:',
             docEndpoints: 'Endpoints',
@@ -46,11 +47,11 @@ const { t } = useI18n({
             docDeleteAddr: '6. Delete Address',
             docNotes: 'Notes',
             docNote1: 'One API key can create and manage multiple addresses',
-            docNote2: 'Each API call consumes 1 usage quota regardless of the endpoint',
-            docNote3: 'When usage reaches the limit, the API returns HTTP 429',
+            docNote2: 'Responses include x-ratelimit-limit / x-ratelimit-remaining headers',
+            docNote3: 'Errors return JSON: { error: { code, message, request_id } }',
             docNote4: 'Replace YOUR_DOMAIN with your actual deployment domain',
             docNote5: 'Create address supports optional tags parameter (JSON array)',
-            docNote6: 'Deleting an address also deletes all associated mails and data',
+            docNote6: 'Unlimited keys can be created by enabling the Unlimited option',
         },
         zh: {
             title: 'API Key 管理',
@@ -63,6 +64,7 @@ const { t } = useI18n({
             create: '创建 API Key',
             keyName: 'Key 名称',
             maxCalls: '调用上限',
+            unlimited: '无限额度',
             delete: '删除',
             deleteTip: '确定要删除这个 API Key 吗？',
             resetUsage: '重置用量',
@@ -76,7 +78,7 @@ const { t } = useI18n({
             newKeyTitle: 'API Key 已创建',
             itemCount: '总数',
             docTitle: 'API 使用说明',
-            docDesc: '使用 API Key 以编程方式调用以下接口。所有请求需携带 x-api-key 请求头，每次调用消耗 1 次配额。',
+            docDesc: '使用 API Key 调用 /v1 接口。所有请求需携带 x-api-key。创建地址支持可选 Idempotency-Key。',
             docAuth: '认证方式',
             docAuthDesc: '在所有请求中添加以下请求头：',
             docEndpoints: '接口列表',
@@ -88,11 +90,11 @@ const { t } = useI18n({
             docDeleteAddr: '6. 删除地址',
             docNotes: '注意事项',
             docNote1: '一个 API Key 可以创建和管理多个地址',
-            docNote2: '每次 API 调用消耗 1 次配额，不区分接口',
-            docNote3: '用量达到上限后，API 将返回 HTTP 429',
+            docNote2: '响应头包含 x-ratelimit-limit / x-ratelimit-remaining',
+            docNote3: '错误统一返回 JSON：{ error: { code, message, request_id } }',
             docNote4: '请将 YOUR_DOMAIN 替换为你的实际部署域名',
             docNote5: '创建地址时支持可选的 tags 参数（JSON 数组）',
-            docNote6: '删除地址时会同时删除所有关联的邮件和数据',
+            docNote6: '创建 API Key 时可开启无限额度',
         }
     }
 });
@@ -105,6 +107,7 @@ const pageSize = ref(20)
 const showCreateModal = ref(false)
 const newKeyName = ref('')
 const newKeyMaxCalls = ref(1000)
+const newKeyUnlimited = ref(false)
 
 const showNewKeyModal = ref(false)
 const createdKey = ref('')
@@ -118,11 +121,11 @@ const columns = [
     { title: () => t('name'), key: 'name', ellipsis: true },
     {
         title: () => t('apiKey'), key: 'api_key',
-        render: (row) => h('code', null, row.api_key.slice(0, 8) + '...' + row.api_key.slice(-4))
+        render: (row) => h('code', null, row.api_key)
     },
     {
         title: () => t('usage'), key: 'used_calls',
-        render: (row) => `${row.used_calls} / ${row.max_calls}`
+        render: (row) => `${row.used_calls} / ${row.max_calls === -1 ? '∞' : row.max_calls}`
     },
     {
         title: () => t('status'), key: 'is_active',
@@ -151,7 +154,7 @@ const fetchData = async () => {
             `/admin/api_keys?limit=${pageSize.value}&offset=${(page.value - 1) * pageSize.value}`
         );
         data.value = res.results || [];
-        if (res.count) count.value = res.count;
+        count.value = res.count || 0;
     } catch (error) {
         message.error(error.message || "error");
     }
@@ -162,13 +165,18 @@ const handleCreate = async () => {
     try {
         const res = await api.fetch('/admin/api_keys', {
             method: 'POST',
-            body: JSON.stringify({ name: newKeyName.value, max_calls: newKeyMaxCalls.value })
+            body: JSON.stringify({
+                name: newKeyName.value,
+                max_calls: newKeyUnlimited.value ? null : newKeyMaxCalls.value,
+                unlimited: newKeyUnlimited.value,
+            })
         });
         createdKey.value = res.api_key;
         showCreateModal.value = false;
         showNewKeyModal.value = true;
         newKeyName.value = '';
         newKeyMaxCalls.value = 1000;
+        newKeyUnlimited.value = false;
         await fetchData();
     } catch (error) {
         message.error(error.message || "error");
@@ -233,33 +241,34 @@ onMounted(fetchData)
                     <n-h6 prefix="bar" style="margin-top: 16px;">{{ t('docEndpoints') }}</n-h6>
 
                     <n-text strong>{{ t('docCreateAddr') }}</n-text>
-                    <pre class="code-block">curl -X POST https://YOUR_DOMAIN/open_api/api/address/create \
+                    <pre class="code-block">curl -X POST https://YOUR_DOMAIN/v1/addresses \
   -H "x-api-key: sk-xxx" \
+  -H "Idempotency-Key: create-address-001" \
   -H "Content-Type: application/json" \
   -d '{"name":"test","domain":"example.com","tags":["signup","twitter"]}'
 
 # Response: {"address":"test@example.com"}</pre>
 
                     <n-text strong>{{ t('docListAddr') }}</n-text>
-                    <pre class="code-block">curl "https://YOUR_DOMAIN/open_api/api/addresses?limit=20&amp;offset=0" \
+                    <pre class="code-block">curl "https://YOUR_DOMAIN/v1/addresses?limit=20&amp;offset=0" \
   -H "x-api-key: sk-xxx"</pre>
 
                     <n-text strong>{{ t('docListMails') }}</n-text>
-                    <pre class="code-block">curl "https://YOUR_DOMAIN/open_api/api/mails?address=test@example.com&amp;limit=20&amp;offset=0" \
+                    <pre class="code-block">curl "https://YOUR_DOMAIN/v1/addresses/test@example.com/mails?limit=20&amp;offset=0" \
   -H "x-api-key: sk-xxx"</pre>
 
                     <n-text strong>{{ t('docGetMail') }}</n-text>
-                    <pre class="code-block">curl "https://YOUR_DOMAIN/open_api/api/mail/MAIL_ID?address=test@example.com" \
+                    <pre class="code-block">curl "https://YOUR_DOMAIN/v1/mails/MAIL_ID" \
   -H "x-api-key: sk-xxx"</pre>
 
                     <n-text strong>{{ t('docExtract') }}</n-text>
-                    <pre class="code-block">curl "https://YOUR_DOMAIN/open_api/api/address/extract/MAIL_ID?address=test@example.com" \
+                    <pre class="code-block">curl "https://YOUR_DOMAIN/v1/mails/MAIL_ID/extract" \
   -H "x-api-key: sk-xxx"
 
 # Response: {"ai_extract": {...}}</pre>
 
                     <n-text strong>{{ t('docDeleteAddr') }}</n-text>
-                    <pre class="code-block">curl -X DELETE "https://YOUR_DOMAIN/open_api/api/address/test@example.com" \
+                    <pre class="code-block">curl -X DELETE "https://YOUR_DOMAIN/v1/addresses/test@example.com" \
   -H "x-api-key: sk-xxx"
 
 # Response: {"success":true}</pre>
@@ -286,7 +295,12 @@ onMounted(fetchData)
         <n-modal v-model:show="showCreateModal" preset="dialog" :title="t('create')">
             <n-space vertical>
                 <n-input v-model:value="newKeyName" :placeholder="t('keyName')" />
+                <n-space justify="space-between" align="center">
+                    <span>{{ t('unlimited') }}</span>
+                    <n-switch v-model:value="newKeyUnlimited" />
+                </n-space>
                 <n-input-number v-model:value="newKeyMaxCalls" :min="1" :placeholder="t('maxCalls')"
+                    :disabled="newKeyUnlimited"
                     style="width: 100%;" />
             </n-space>
             <template #action>

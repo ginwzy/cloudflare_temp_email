@@ -123,7 +123,7 @@ CREATE INDEX IF NOT EXISTS idx_user_passkeys_user_id ON user_passkeys(user_id);
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_user_passkeys_user_id_passkey_id ON user_passkeys(user_id, passkey_id);
 
-CREATE TABLE IF NOT EXISTS api_keys (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, api_key TEXT UNIQUE NOT NULL, max_calls INTEGER DEFAULT 1000, used_calls INTEGER DEFAULT 0, is_active INTEGER DEFAULT 1, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS api_keys (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, api_key TEXT UNIQUE NOT NULL, max_calls INTEGER DEFAULT 1000, used_calls INTEGER DEFAULT 0, is_active INTEGER DEFAULT 1, last_used_at DATETIME, last_used_ip TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP);
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_api_keys_api_key ON api_keys(api_key);
 
@@ -134,6 +134,10 @@ CREATE INDEX IF NOT EXISTS idx_api_key_addresses_key_id ON api_key_addresses(key
 CREATE INDEX IF NOT EXISTS idx_api_key_addresses_address ON api_key_addresses(address);
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_api_key_addresses_key_address ON api_key_addresses(key_id, address);
+
+CREATE TABLE IF NOT EXISTS api_idempotency (id INTEGER PRIMARY KEY AUTOINCREMENT, key_id INTEGER NOT NULL, idem_key TEXT NOT NULL, method TEXT NOT NULL, path TEXT NOT NULL, request_hash TEXT NOT NULL, response_body TEXT NOT NULL, status_code INTEGER NOT NULL DEFAULT 200, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (key_id) REFERENCES api_keys(id) ON DELETE CASCADE);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_api_idempotency_unique ON api_idempotency(key_id, idem_key, method, path);
 `
 
 export default {
@@ -192,7 +196,7 @@ export default {
         }
         if (version && version <= "v0.0.5") {
             // migration to v0.0.6: add api_keys table
-            await c.env.DB.exec(`CREATE TABLE IF NOT EXISTS api_keys (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, api_key TEXT UNIQUE NOT NULL, max_calls INTEGER DEFAULT 1000, used_calls INTEGER DEFAULT 0, is_active INTEGER DEFAULT 1, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP);`);
+            await c.env.DB.exec(`CREATE TABLE IF NOT EXISTS api_keys (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, api_key TEXT UNIQUE NOT NULL, max_calls INTEGER DEFAULT 1000, used_calls INTEGER DEFAULT 0, is_active INTEGER DEFAULT 1, last_used_at DATETIME, last_used_ip TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP);`);
             await c.env.DB.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_api_keys_api_key ON api_keys(api_key);`);
         }
         if (version && version <= "v0.0.6") {
@@ -225,6 +229,26 @@ export default {
             if (!hasSubject) {
                 await c.env.DB.exec(`ALTER TABLE raw_mails ADD COLUMN subject TEXT;`);
             }
+        }
+        if (version && version <= "v0.0.9") {
+            // migration to v0.1.0: enhance api_keys metadata and add idempotency table
+            const tableInfo = await c.env.DB.prepare(
+                `PRAGMA table_info(api_keys)`
+            ).all();
+            const hasLastUsedAt = tableInfo.results?.some(
+                (col: any) => col.name === 'last_used_at'
+            );
+            if (!hasLastUsedAt) {
+                await c.env.DB.exec(`ALTER TABLE api_keys ADD COLUMN last_used_at DATETIME;`);
+            }
+            const hasLastUsedIp = tableInfo.results?.some(
+                (col: any) => col.name === 'last_used_ip'
+            );
+            if (!hasLastUsedIp) {
+                await c.env.DB.exec(`ALTER TABLE api_keys ADD COLUMN last_used_ip TEXT;`);
+            }
+            await c.env.DB.exec(`CREATE TABLE IF NOT EXISTS api_idempotency (id INTEGER PRIMARY KEY AUTOINCREMENT, key_id INTEGER NOT NULL, idem_key TEXT NOT NULL, method TEXT NOT NULL, path TEXT NOT NULL, request_hash TEXT NOT NULL, response_body TEXT NOT NULL, status_code INTEGER NOT NULL DEFAULT 200, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (key_id) REFERENCES api_keys(id) ON DELETE CASCADE);`);
+            await c.env.DB.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_api_idempotency_unique ON api_idempotency(key_id, idem_key, method, path);`);
         }
         if (version != CONSTANTS.DB_VERSION) {
             const statements = DB_INIT_QUERIES.replace(/[\r\n]/g, "")

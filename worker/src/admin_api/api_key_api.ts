@@ -2,30 +2,48 @@ import { Context } from "hono";
 import { handleListQuery } from "../common";
 
 function generateApiKey(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = 'sk-';
-    for (let i = 0; i < 32; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
+    const bytes = new Uint8Array(24);
+    crypto.getRandomValues(bytes);
+    const token = btoa(String.fromCharCode(...bytes))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/g, '');
+    return `sk-${token}`;
 }
 
 async function list(c: Context<HonoCustomType>) {
     const { limit, offset } = c.req.query();
     return handleListQuery(c,
-        `SELECT * FROM api_keys`,
+        `SELECT id, name, substr(api_key, 1, 10) || '...' || substr(api_key, -4) as api_key, max_calls, used_calls, is_active, last_used_at, last_used_ip, created_at, updated_at FROM api_keys`,
         `SELECT count(*) as count FROM api_keys`,
         [], limit, offset
     );
 }
 
 async function create(c: Context<HonoCustomType>) {
-    const { name, max_calls } = await c.req.json();
+    const { name, max_calls, unlimited } = await c.req.json<{
+        name?: string;
+        max_calls?: number | null;
+        unlimited?: boolean;
+    }>();
     if (!name) return c.text("Name is required", 400);
+    const normalizedName = name.trim();
+    if (!normalizedName) return c.text("Name is required", 400);
+
+    let normalizedMaxCalls = 1000;
+    if (unlimited === true) {
+        normalizedMaxCalls = -1;
+    } else if (typeof max_calls === "number") {
+        if (!Number.isInteger(max_calls) || max_calls < 1) {
+            return c.text("max_calls must be a positive integer", 400);
+        }
+        normalizedMaxCalls = max_calls;
+    }
+
     const api_key = generateApiKey();
     const { success } = await c.env.DB.prepare(
         `INSERT INTO api_keys(name, api_key, max_calls) VALUES(?, ?, ?)`
-    ).bind(name, api_key, max_calls || 1000).run();
+    ).bind(normalizedName, api_key, normalizedMaxCalls).run();
     if (!success) return c.text("Failed to create API key", 500);
     return c.json({ success: true, api_key });
 }

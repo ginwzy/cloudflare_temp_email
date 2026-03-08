@@ -5,6 +5,8 @@ CREATE TABLE IF NOT EXISTS api_keys (
     max_calls INTEGER DEFAULT 1000,
     used_calls INTEGER DEFAULT 0,
     is_active INTEGER DEFAULT 1,
+    last_used_at DATETIME,
+    last_used_ip TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

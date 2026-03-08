@@ -127,6 +127,8 @@ CREATE TABLE IF NOT EXISTS api_keys (
     max_calls INTEGER DEFAULT 1000,
     used_calls INTEGER DEFAULT 0,
     is_active INTEGER DEFAULT 1,
+    last_used_at DATETIME,
+    last_used_ip TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -146,3 +148,18 @@ CREATE INDEX IF NOT EXISTS idx_api_key_addresses_key_id ON api_key_addresses(key
 CREATE INDEX IF NOT EXISTS idx_api_key_addresses_address ON api_key_addresses(address);
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_api_key_addresses_key_address ON api_key_addresses(key_id, address);
+
+CREATE TABLE IF NOT EXISTS api_idempotency (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    key_id INTEGER NOT NULL,
+    idem_key TEXT NOT NULL,
+    method TEXT NOT NULL,
+    path TEXT NOT NULL,
+    request_hash TEXT NOT NULL,
+    response_body TEXT NOT NULL,
+    status_code INTEGER NOT NULL DEFAULT 200,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (key_id) REFERENCES api_keys(id) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_api_idempotency_unique ON api_idempotency(key_id, idem_key, method, path);

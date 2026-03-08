@@ -1,6 +1,7 @@
 const API_PATHS = [
     "/api/",
     "/open_api/",
+    "/v1/",
     "/user_api/",
     "/admin/",
     "/telegram/",
