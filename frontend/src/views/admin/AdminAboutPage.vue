@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useGlobalState } from '../../store'
@@ -16,22 +16,30 @@ const {
 const { locale, t } = useI18n({
   messages: {
     en: {
-      about: 'About', loginMethod: 'Login Method',
+      about: 'About',
+      loginMethod: 'Login Method',
       loginViaPassword: 'Admin Password Login',
       loginViaUserAdmin: 'User Admin Permission',
       loginViaDisabledCheck: 'Disabled Password Check',
-      logout: 'Logout', logoutConfirmTitle: 'Confirm Logout',
+      logout: 'Logout',
+      logoutConfirmTitle: 'Confirm Logout',
       logoutConfirmContent: 'Are you sure you want to logout from admin panel?',
-      confirm: 'Confirm', logoutSuccess: 'Logout successful',
+      confirm: 'Confirm',
+      logoutSuccess: 'Logout successful',
+      description: 'View project info and manage current admin login session.'
     },
     zh: {
-      about: '关于', loginMethod: '登录方式',
+      about: '关于',
+      loginMethod: '登录方式',
       loginViaPassword: 'Admin 密码登录',
       loginViaUserAdmin: '用户管理员权限',
       loginViaDisabledCheck: '已禁用密码检查',
-      logout: '退出登录', logoutConfirmTitle: '确认退出',
+      logout: '退出登录',
+      logoutConfirmTitle: '确认退出',
       logoutConfirmContent: '确定要退出管理员面板吗？',
-      confirm: '确认', logoutSuccess: '退出成功',
+      confirm: '确认',
+      logoutSuccess: '退出成功',
+      description: '查看项目信息并管理当前管理员登录会话。'
     }
   }
 })
@@ -56,21 +64,31 @@ const handleLogout = async () => {
 </script>
 
 <template>
-  <div>
-    <h2 class="page-title">{{ t('about') }}</h2>
-    <div style="display: flex; justify-content: center; margin-bottom: 20px;">
-      <n-card style="max-width: 600px; width: 100%;">
-        <n-space vertical>
-          <n-text strong>{{ t('loginMethod') }}</n-text>
-          <n-text>{{ currentLoginMethod }}</n-text>
-          <n-divider v-if="isAdminPasswordLogin" />
-          <n-button v-if="isAdminPasswordLogin" type="warning" @click="showLogoutModal = true" block>
-            {{ t('logout') }}
-          </n-button>
-        </n-space>
-      </n-card>
-    </div>
-    <About />
+  <section class="about-page">
+    <header class="about-header">
+      <div>
+        <h2 class="page-title">{{ t('about') }}</h2>
+        <p class="page-subtitle">{{ t('description') }}</p>
+      </div>
+    </header>
+
+    <main class="about-content">
+      <div class="login-card-wrap">
+        <n-card class="login-card">
+          <n-space vertical>
+            <n-text strong>{{ t('loginMethod') }}</n-text>
+            <n-text>{{ currentLoginMethod }}</n-text>
+            <n-divider v-if="isAdminPasswordLogin" />
+            <n-button v-if="isAdminPasswordLogin" type="warning" @click="showLogoutModal = true" block>
+              {{ t('logout') }}
+            </n-button>
+          </n-space>
+        </n-card>
+      </div>
+
+      <About />
+    </main>
+
     <n-modal v-model:show="showLogoutModal" preset="dialog" :title="t('logoutConfirmTitle')">
       <p>{{ t('logoutConfirmContent') }}</p>
       <template #action>
@@ -79,9 +97,49 @@ const handleLogout = async () => {
         </n-button>
       </template>
     </n-modal>
-  </div>
+  </section>
 </template>
 
 <style scoped>
-.page-title { margin: 0 0 16px; font-size: 20px; font-weight: 600; }
+.about-page {
+  display: grid;
+  gap: 12px;
+}
+
+.about-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--ds-text);
+}
+
+.page-subtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--ds-text-secondary);
+}
+
+.about-content {
+  min-width: 0;
+}
+
+.login-card-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.login-card {
+  max-width: 600px;
+  width: 100%;
+}
 </style>
