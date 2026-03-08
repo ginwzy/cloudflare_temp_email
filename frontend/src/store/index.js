@@ -73,8 +73,6 @@ export const useGlobalState = createGlobalState(
         const userJwt = useStorage('userJwt', '');
         const userTab = useSessionStorage('userTab', 'address_management');
         const indexTab = useSessionStorage('indexTab', 'mailbox');
-        const globalTabplacement = useStorage('globalTabplacement', 'top');
-        const useSideMargin = useStorage('useSideMargin', true);
         const useUTCDate = useStorage('useUTCDate', false);
         const autoRefresh = useStorage('autoRefresh', false);
         const configAutoRefreshInterval = useStorage("configAutoRefreshInterval", 60);
@@ -136,8 +134,6 @@ export const useGlobalState = createGlobalState(
             indexTab,
             userOpenSettings,
             userSettings,
-            globalTabplacement,
-            useSideMargin,
             useUTCDate,
             autoRefresh,
             configAutoRefreshInterval,
