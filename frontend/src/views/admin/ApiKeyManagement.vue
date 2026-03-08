@@ -228,20 +228,20 @@ onMounted(fetchData)
                 </n-button>
             </template>
             <!-- API Documentation -->
-            <n-collapse style="margin-bottom: 16px;">
-                <n-collapse-item :title="t('docTitle')" name="doc">
-                    <n-text depth="3" style="display: block; margin-bottom: 12px;">
-                        {{ t('docDesc') }}
-                    </n-text>
+            <section class="api-doc-block">
+                <h3 class="api-doc-title">{{ t('docTitle') }}</h3>
+                <n-text depth="3" style="display: block; margin-bottom: 12px;">
+                    {{ t('docDesc') }}
+                </n-text>
 
-                    <n-h6 prefix="bar">{{ t('docAuth') }}</n-h6>
-                    <n-text depth="3">{{ t('docAuthDesc') }}</n-text>
-                    <pre class="code-block">x-api-key: sk-xxxxxxxxxxxxx</pre>
+                <n-h6 prefix="bar">{{ t('docAuth') }}</n-h6>
+                <n-text depth="3">{{ t('docAuthDesc') }}</n-text>
+                <pre class="code-block">x-api-key: sk-xxxxxxxxxxxxx</pre>
 
-                    <n-h6 prefix="bar" style="margin-top: 16px;">{{ t('docEndpoints') }}</n-h6>
+                <n-h6 prefix="bar" style="margin-top: 16px;">{{ t('docEndpoints') }}</n-h6>
 
-                    <n-text strong>{{ t('docCreateAddr') }}</n-text>
-                    <pre class="code-block">curl -X POST https://YOUR_DOMAIN/v1/addresses \
+                <n-text strong>{{ t('docCreateAddr') }}</n-text>
+                <pre class="code-block">curl -X POST https://YOUR_DOMAIN/v1/addresses \
   -H "x-api-key: sk-xxx" \
   -H "Idempotency-Key: create-address-001" \
   -H "Content-Type: application/json" \
@@ -249,41 +249,40 @@ onMounted(fetchData)
 
 # Response: {"address":"test@example.com"}</pre>
 
-                    <n-text strong>{{ t('docListAddr') }}</n-text>
-                    <pre class="code-block">curl "https://YOUR_DOMAIN/v1/addresses?limit=20&amp;offset=0" \
+                <n-text strong>{{ t('docListAddr') }}</n-text>
+                <pre class="code-block">curl "https://YOUR_DOMAIN/v1/addresses?limit=20&amp;offset=0" \
   -H "x-api-key: sk-xxx"</pre>
 
-                    <n-text strong>{{ t('docListMails') }}</n-text>
-                    <pre class="code-block">curl "https://YOUR_DOMAIN/v1/addresses/test@example.com/mails?limit=20&amp;offset=0" \
+                <n-text strong>{{ t('docListMails') }}</n-text>
+                <pre class="code-block">curl "https://YOUR_DOMAIN/v1/addresses/test@example.com/mails?limit=20&amp;offset=0" \
   -H "x-api-key: sk-xxx"</pre>
 
-                    <n-text strong>{{ t('docGetMail') }}</n-text>
-                    <pre class="code-block">curl "https://YOUR_DOMAIN/v1/mails/MAIL_ID" \
+                <n-text strong>{{ t('docGetMail') }}</n-text>
+                <pre class="code-block">curl "https://YOUR_DOMAIN/v1/mails/MAIL_ID" \
   -H "x-api-key: sk-xxx"</pre>
 
-                    <n-text strong>{{ t('docExtract') }}</n-text>
-                    <pre class="code-block">curl "https://YOUR_DOMAIN/v1/mails/MAIL_ID/extract" \
+                <n-text strong>{{ t('docExtract') }}</n-text>
+                <pre class="code-block">curl "https://YOUR_DOMAIN/v1/mails/MAIL_ID/extract" \
   -H "x-api-key: sk-xxx"
 
 # Response: {"ai_extract": {...}}</pre>
 
-                    <n-text strong>{{ t('docDeleteAddr') }}</n-text>
-                    <pre class="code-block">curl -X DELETE "https://YOUR_DOMAIN/v1/addresses/test@example.com" \
+                <n-text strong>{{ t('docDeleteAddr') }}</n-text>
+                <pre class="code-block">curl -X DELETE "https://YOUR_DOMAIN/v1/addresses/test@example.com" \
   -H "x-api-key: sk-xxx"
 
 # Response: {"success":true}</pre>
 
-                    <n-h6 prefix="bar" style="margin-top: 16px;">{{ t('docNotes') }}</n-h6>
-                    <ul class="doc-notes">
-                        <li>{{ t('docNote1') }}</li>
-                        <li>{{ t('docNote2') }}</li>
-                        <li>{{ t('docNote3') }}</li>
-                        <li>{{ t('docNote4') }}</li>
-                        <li>{{ t('docNote5') }}</li>
-                        <li>{{ t('docNote6') }}</li>
-                    </ul>
-                </n-collapse-item>
-            </n-collapse>
+                <n-h6 prefix="bar" style="margin-top: 16px;">{{ t('docNotes') }}</n-h6>
+                <ul class="doc-notes">
+                    <li>{{ t('docNote1') }}</li>
+                    <li>{{ t('docNote2') }}</li>
+                    <li>{{ t('docNote3') }}</li>
+                    <li>{{ t('docNote4') }}</li>
+                    <li>{{ t('docNote5') }}</li>
+                    <li>{{ t('docNote6') }}</li>
+                </ul>
+            </section>
 
             <n-data-table :columns="columns" :data="data" :loading="loading" :row-key="(row) => row.id" />
             <n-pagination v-model:page="page" :page-size="pageSize" :item-count="count"
@@ -350,6 +349,14 @@ onMounted(fetchData)
     place-items: center;
     justify-content: center;
     margin: 20px;
+}
+.api-doc-block {
+    margin-bottom: 16px;
+}
+.api-doc-title {
+    margin: 0 0 8px;
+    font-size: 16px;
+    font-weight: 600;
 }
 .code-block {
     background: var(--n-color-embedded, #f4f4f8);
