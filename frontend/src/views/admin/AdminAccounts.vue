@@ -60,19 +60,11 @@ const { t } = useI18n({
       </n-space>
     </header>
 
-    <n-card embedded :bordered="false" class="accounts-content-shell">
-      <n-tabs v-model:value="tab" type="line" animated>
-        <n-tab-pane name="list" :tab="t('list')">
-          <Account />
-        </n-tab-pane>
-        <n-tab-pane name="create" :tab="t('create')">
-          <CreateAccount />
-        </n-tab-pane>
-        <n-tab-pane name="settings" :tab="t('settings')">
-          <AccountSettings />
-        </n-tab-pane>
-      </n-tabs>
-    </n-card>
+    <main class="accounts-content">
+      <Account v-if="tab === 'list'" />
+      <CreateAccount v-else-if="tab === 'create'" />
+      <AccountSettings v-else />
+    </main>
   </section>
 </template>
 
@@ -104,8 +96,7 @@ const { t } = useI18n({
   color: var(--ds-text-secondary);
 }
 
-.accounts-content-shell {
-  border-radius: var(--ds-radius);
-  border: 1px solid color-mix(in srgb, var(--ds-border) 80%, transparent);
+.accounts-content {
+  min-width: 0;
 }
 </style>
