@@ -1,5 +1,5 @@
 import { Context } from "hono";
-import { handleListQuery } from "../common";
+import { handleListQuery, RAW_MAIL_SUBJECT_SQL } from "../common";
 import UserBindAddressModule from "./bind_address";
 
 export default {
@@ -7,9 +7,6 @@ export default {
         const { user_id } = c.get("userPayload");
         const { address, limit, offset, summary } = c.req.query();
         const isSummary = summary === '1' || summary === 'true';
-        const selectFields = isSummary
-            ? `id, message_id, source, address, metadata, created_at`
-            : `*`;
         const bindedAddressList = await UserBindAddressModule.getBindedAddressListById(c, user_id);
         const addressList = address ? bindedAddressList.filter((item) => item == address) : bindedAddressList;
         const addressQuery = `address IN (${addressList.map(() => "?").join(",")})`;
@@ -23,11 +20,31 @@ export default {
         const filterQuerys = [addressQuery].filter((item) => item).join(" and ");
         const finalQuery = filterQuerys.length > 0 ? `where ${filterQuerys}` : "";
         const filterParams = [...addressParams]
-        return await handleListQuery(c,
-            `SELECT ${selectFields} FROM raw_mails ${finalQuery}`,
-            `SELECT count(*) as count FROM raw_mails ${finalQuery}`,
-            filterParams, limit, offset
-        );
+        const countQuery = `SELECT count(*) as count FROM raw_mails ${finalQuery}`;
+        if (!isSummary) {
+            return await handleListQuery(c,
+                `SELECT * FROM raw_mails ${finalQuery}`,
+                countQuery,
+                filterParams, limit, offset
+            );
+        }
+        try {
+            return await handleListQuery(c,
+                `SELECT id, message_id, source, subject, address, metadata, created_at FROM raw_mails ${finalQuery}`,
+                countQuery,
+                filterParams, limit, offset
+            );
+        } catch (error) {
+            const errorMessage = `${error}`;
+            if (!errorMessage.includes("no such column: subject")) {
+                throw error;
+            }
+            return await handleListQuery(c,
+                `SELECT id, message_id, source, (${RAW_MAIL_SUBJECT_SQL}) as subject, address, metadata, created_at FROM raw_mails ${finalQuery}`,
+                countQuery,
+                filterParams, limit, offset
+            );
+        }
     },
     getMail: async (c: Context<HonoCustomType>) => {
         const { id } = c.req.param();

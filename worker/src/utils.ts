@@ -250,11 +250,23 @@ export const sendAdminInternalMail = async (
             data: text
         });
         const message_id = Math.random().toString(36).substring(2, 15);
-        const { success } = await c.env.DB.prepare(
-            `INSERT INTO raw_mails (source, address, raw, message_id) VALUES (?, ?, ?, ?)`
-        ).bind(
-            "admin@internal", toMail, msg.asRaw(), message_id
-        ).run();
+        let success = false;
+        try {
+            const result = await c.env.DB.prepare(
+                `INSERT INTO raw_mails (source, address, subject, raw, message_id) VALUES (?, ?, ?, ?, ?)`
+            ).bind(
+                "admin@internal", toMail, subject, msg.asRaw(), message_id
+            ).run();
+            success = !!result.success;
+        } catch {
+            // Backward compatibility for databases not migrated to v0.0.9 yet.
+            const fallback = await c.env.DB.prepare(
+                `INSERT INTO raw_mails (source, address, raw, message_id) VALUES (?, ?, ?, ?)`
+            ).bind(
+                "admin@internal", toMail, msg.asRaw(), message_id
+            ).run();
+            success = !!fallback.success;
+        }
         if (!success) {
             console.log(`Failed save message from admin@internal to ${toMail}`);
         }

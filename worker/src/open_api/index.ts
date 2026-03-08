@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 
-import { newAddress, handleListQuery } from '../common'
+import { newAddress, handleListQuery, RAW_MAIL_SUBJECT_SQL } from '../common'
 
 const app = new Hono<HonoCustomType>()
 
@@ -85,11 +85,23 @@ app.get('/open_api/api/mails', async (c) => {
     const isOwner = await verifyAddressOwnership(c, address);
     if (!isOwner) return c.text("Address not found or not owned by this API key", 403);
     const { limit, offset } = c.req.query();
-    return handleListQuery(c,
-        `SELECT id, message_id, source, address, metadata, created_at FROM raw_mails WHERE address = ?`,
-        `SELECT count(*) as count FROM raw_mails WHERE address = ?`,
-        [address], limit || '20', offset || '0'
-    );
+    try {
+        return await handleListQuery(c,
+            `SELECT id, message_id, source, subject, address, metadata, created_at FROM raw_mails WHERE address = ?`,
+            `SELECT count(*) as count FROM raw_mails WHERE address = ?`,
+            [address], limit || '20', offset || '0'
+        );
+    } catch (error) {
+        const errorMessage = `${error}`;
+        if (!errorMessage.includes("no such column: subject")) {
+            throw error;
+        }
+        return await handleListQuery(c,
+            `SELECT id, message_id, source, (${RAW_MAIL_SUBJECT_SQL}) as subject, address, metadata, created_at FROM raw_mails WHERE address = ?`,
+            `SELECT count(*) as count FROM raw_mails WHERE address = ?`,
+            [address], limit || '20', offset || '0'
+        );
+    }
 });
 
 // Get single mail

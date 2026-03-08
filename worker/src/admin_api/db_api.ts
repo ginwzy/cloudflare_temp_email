@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS raw_mails (
     message_id TEXT,
     source TEXT,
     address TEXT,
+    subject TEXT,
     raw TEXT,
     metadata TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -212,6 +213,44 @@ export default {
             if (!hasTags) {
                 await c.env.DB.exec(`ALTER TABLE address ADD COLUMN tags TEXT DEFAULT '[]';`);
             }
+        }
+        if (version && version <= "v0.0.8") {
+            // migration to v0.0.9: add subject column to raw_mails and backfill from raw headers
+            const tableInfo = await c.env.DB.prepare(
+                `PRAGMA table_info(raw_mails)`
+            ).all();
+            const hasSubject = tableInfo.results?.some(
+                (col: any) => col.name === 'subject'
+            );
+            if (!hasSubject) {
+                await c.env.DB.exec(`ALTER TABLE raw_mails ADD COLUMN subject TEXT;`);
+            }
+            await c.env.DB.exec(`
+                UPDATE raw_mails
+                SET subject = CASE
+                    WHEN subject IS NOT NULL AND TRIM(subject) <> '' THEN subject
+                    WHEN raw IS NULL OR raw = '' THEN ''
+                    WHEN instr(lower(raw), 'subject:') <= 0 THEN ''
+                    ELSE TRIM(
+                        REPLACE(
+                            REPLACE(
+                                SUBSTR(
+                                    raw,
+                                    instr(lower(raw), 'subject:') + 8,
+                                    CASE
+                                        WHEN instr(SUBSTR(raw, instr(lower(raw), 'subject:') + 8), char(10)) > 0
+                                        THEN instr(SUBSTR(raw, instr(lower(raw), 'subject:') + 8), char(10)) - 1
+                                        ELSE 255
+                                    END
+                                ),
+                                char(13), ''
+                            ),
+                            char(10), ''
+                        )
+                    )
+                END
+                WHERE subject IS NULL OR TRIM(subject) = '';
+            `);
         }
         if (version != CONSTANTS.DB_VERSION) {
             const statements = DB_INIT_QUERIES.replace(/[\r\n]/g, "")

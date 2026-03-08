@@ -2,7 +2,7 @@ import { Context, Hono } from 'hono'
 
 import i18n from '../i18n';
 import { getBooleanValue, getJsonSetting, checkCfTurnstile, getStringValue, getSplitStringListValue, isAddressCountLimitReached } from '../utils';
-import { newAddress, handleListQuery, deleteAddressWithData, getAddressPrefix, getAllowDomains, updateAddressUpdatedAt, generateRandomName } from '../common'
+import { newAddress, handleListQuery, deleteAddressWithData, getAddressPrefix, getAllowDomains, updateAddressUpdatedAt, generateRandomName, RAW_MAIL_SUBJECT_SQL } from '../common'
 import { CONSTANTS } from '../constants'
 import auto_reply from './auto_reply'
 import webhook_settings from './webhook_settings';
@@ -39,15 +39,32 @@ api.get('/api/mails', async (c) => {
     }
     const { limit, offset, summary } = c.req.query();
     const isSummary = summary === '1' || summary === 'true';
-    const selectFields = isSummary
-        ? `id, message_id, source, address, metadata, created_at`
-        : `*`;
     if (Number.parseInt(offset) <= 0) updateAddressUpdatedAt(c, address);
-    return await handleListQuery(c,
-        `SELECT ${selectFields} FROM raw_mails where address = ?`,
-        `SELECT count(*) as count FROM raw_mails where address = ?`,
-        [address], limit, offset
-    );
+    const countQuery = `SELECT count(*) as count FROM raw_mails where address = ?`;
+    if (!isSummary) {
+        return await handleListQuery(c,
+            `SELECT * FROM raw_mails where address = ?`,
+            countQuery,
+            [address], limit, offset
+        );
+    }
+    try {
+        return await handleListQuery(c,
+            `SELECT id, message_id, source, subject, address, metadata, created_at FROM raw_mails where address = ?`,
+            countQuery,
+            [address], limit, offset
+        );
+    } catch (error) {
+        const errorMessage = `${error}`;
+        if (!errorMessage.includes("no such column: subject")) {
+            throw error;
+        }
+        return await handleListQuery(c,
+            `SELECT id, message_id, source, (${RAW_MAIL_SUBJECT_SQL}) as subject, address, metadata, created_at FROM raw_mails where address = ?`,
+            countQuery,
+            [address], limit, offset
+        );
+    }
 })
 
 api.get('/api/mail/:mail_id', async (c) => {

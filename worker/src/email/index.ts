@@ -65,14 +65,28 @@ async function email(message: ForwardableEmailMessage, env: Bindings, ctx: Execu
     const message_id = message.headers.get("Message-ID");
     // save email
     try {
-        const { success } = await env.DB.prepare(
-            `INSERT INTO raw_mails (source, address, raw, message_id) VALUES (?, ?, ?, ?)`
-        ).bind(
-            message.from, message.to, parsedEmailContext.rawEmail, message_id
-        ).run();
-        if (!success) {
-            message.setReject(`Failed save message to ${message.to}`);
-            console.error(`Failed save message from ${message.from} to ${message.to}`);
+        const subject = message.headers.get("Subject") || "";
+        try {
+            const { success } = await env.DB.prepare(
+                `INSERT INTO raw_mails (source, address, subject, raw, message_id) VALUES (?, ?, ?, ?, ?)`
+            ).bind(
+                message.from, message.to, subject, parsedEmailContext.rawEmail, message_id
+            ).run();
+            if (!success) {
+                message.setReject(`Failed save message to ${message.to}`);
+                console.error(`Failed save message from ${message.from} to ${message.to}`);
+            }
+        } catch (insertError) {
+            // Backward compatibility for databases not migrated to v0.0.9 yet.
+            const fallback = await env.DB.prepare(
+                `INSERT INTO raw_mails (source, address, raw, message_id) VALUES (?, ?, ?, ?)`
+            ).bind(
+                message.from, message.to, parsedEmailContext.rawEmail, message_id
+            ).run();
+            if (!fallback.success) {
+                message.setReject(`Failed save message to ${message.to}`);
+                console.error(`Failed save message from ${message.from} to ${message.to}`);
+            }
         }
     }
     catch (error) {

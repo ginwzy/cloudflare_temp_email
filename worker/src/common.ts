@@ -479,6 +479,32 @@ export const handleListQuery = async (
     return c.json({ results, count });
 }
 
+// SQLite expression: best-effort subject extraction from raw MIME headers.
+// Used as a compatibility fallback when `raw_mails.subject` column is not present yet.
+export const RAW_MAIL_SUBJECT_SQL = `
+CASE
+    WHEN raw IS NULL OR raw = '' THEN ''
+    WHEN instr(lower(raw), 'subject:') <= 0 THEN ''
+    ELSE TRIM(
+        REPLACE(
+            REPLACE(
+                SUBSTR(
+                    raw,
+                    instr(lower(raw), 'subject:') + 8,
+                    CASE
+                        WHEN instr(SUBSTR(raw, instr(lower(raw), 'subject:') + 8), char(10)) > 0
+                        THEN instr(SUBSTR(raw, instr(lower(raw), 'subject:') + 8), char(10)) - 1
+                        ELSE 255
+                    END
+                ),
+                char(13), ''
+            ),
+            char(10), ''
+        )
+    )
+END
+`;
+
 
 export const commonParseMail = async (parsedEmailContext: ParsedEmailContext): Promise<{
     sender: string,
