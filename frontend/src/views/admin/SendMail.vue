@@ -2,13 +2,15 @@
 import '@wangeditor/editor/dist/css/style.css'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import { useI18n } from 'vue-i18n'
-import { onBeforeUnmount, ref, shallowRef } from 'vue'
+import { computed, onBeforeUnmount, ref, shallowRef } from 'vue'
 import { useSessionStorage } from '@vueuse/core'
 import { api } from '../../api'
+import { sanitizeRichTextHtml } from '../../utils/safe-html'
 
 const message = useMessage()
 const isPreview = ref(false)
 const editorRef = shallowRef()
+const safePreviewHtml = computed(() => sanitizeRichTextHtml(sendMailModel.value.content || ''))
 
 const sendMailModel = useSessionStorage('sendMailByAdminModel', {
     fromName: "",
@@ -156,7 +158,7 @@ const handleCreated = (editor) => {
                     </n-form-item>
                     <n-form-item :label="t('content')" label-placement="top">
                         <n-card :bordered="false" embedded v-if="isPreview">
-                            <div v-html="sendMailModel.content" />
+                            <div v-html="safePreviewHtml" />
                         </n-card>
                         <div v-else-if="sendMailModel.contentType == 'rich'" style="border: 1px solid #ccc">
                             <Toolbar style="border-bottom: 1px solid #ccc" :defaultConfig="toolbarConfig"

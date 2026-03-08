@@ -136,12 +136,27 @@ const addressRegex = computed(() => {
 });
 
 const generateNameLoading = ref(false);
+const randomPick = (items) => {
+    if (!Array.isArray(items) || items.length === 0) return '';
+    const randomValue = (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function')
+        ? crypto.getRandomValues(new Uint32Array(1))[0]
+        : Math.floor(Math.random() * 0xffffffff);
+    return items[randomValue % items.length];
+};
+
+const localPartSeed = () => {
+    const adjectives = ['bright', 'calm', 'clever', 'swift', 'silent', 'lucky', 'tiny', 'fresh', 'bold', 'neat'];
+    const nouns = ['river', 'forest', 'cloud', 'falcon', 'leaf', 'stone', 'field', 'light', 'wave', 'delta'];
+    const number = (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function')
+        ? crypto.getRandomValues(new Uint32Array(1))[0] % 10000
+        : Math.floor(Math.random() * 10000);
+    return `${randomPick(adjectives)}.${randomPick(nouns)}.${number}`;
+};
+
 const generateName = async () => {
     try {
         generateNameLoading.value = true;
-        const { faker } = await import('https://esm.sh/@faker-js/faker');
-        emailName.value = faker.internet.email()
-            .split('@')[0]
+        emailName.value = localPartSeed()
             .replace(/\s+/g, '.')
             .replace(/\.{2,}/g, '.')
             .replace(addressRegex.value, '')

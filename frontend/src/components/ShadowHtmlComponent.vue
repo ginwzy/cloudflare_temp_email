@@ -1,10 +1,11 @@
 <template>
-    <div v-if="useFallback" v-html="htmlContent"></div>
+    <div v-if="useFallback" v-html="safeHtmlContent"></div>
     <div v-else ref="shadowHost"></div>
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { sanitizeMailHtml } from '../utils/safe-html';
 
 const props = defineProps({
     htmlContent: {
@@ -16,6 +17,7 @@ const props = defineProps({
 const shadowHost = ref(null);
 let shadowRoot = null;
 const useFallback = ref(false);
+const safeHtmlContent = computed(() => sanitizeMailHtml(props.htmlContent || ''));
 
 /**
  * Renders content into Shadow DOM with fallback to v-html
@@ -40,7 +42,7 @@ const renderShadowDom = () => {
 
         // Update content if Shadow DOM exists
         if (shadowRoot) {
-            shadowRoot.innerHTML = props.htmlContent;
+            shadowRoot.innerHTML = safeHtmlContent.value;
         }
     } catch (error) {
         console.error('Failed to render Shadow DOM, falling back to v-html:', error);
@@ -69,7 +71,7 @@ onBeforeUnmount(() => {
 });
 
 // Update Shadow DOM when htmlContent changes
-watch(() => props.htmlContent, () => {
+watch(() => safeHtmlContent.value, () => {
     renderShadowDom();
 }, { flush: 'post' });
 </script>

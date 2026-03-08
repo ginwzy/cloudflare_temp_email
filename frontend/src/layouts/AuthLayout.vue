@@ -1,13 +1,15 @@
 <script setup>
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useHead } from '@unhead/vue'
 import { useI18n } from 'vue-i18n'
 import { useGlobalState } from '../store'
 import { api } from '../api'
+import { sanitizeRichTextHtml } from '../utils/safe-html'
 
 const message = useMessage()
 const notification = useNotification()
 const { openSettings, userSettings } = useGlobalState()
+const safeCopyright = computed(() => sanitizeRichTextHtml(openSettings.value.copyright || 'Dream Hunter'))
 
 const { t } = useI18n({
   messages: {
@@ -38,7 +40,7 @@ onMounted(async () => {
       </n-card>
       <n-text depth="3" class="auth-footer">
         &copy; {{ new Date().getFullYear() }}
-        <span v-html="openSettings.copyright || 'Dream Hunter'"></span>
+        <span v-html="safeCopyright"></span>
       </n-text>
     </div>
   </div>

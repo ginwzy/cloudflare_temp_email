@@ -1,7 +1,10 @@
 <script setup>
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useGlobalState } from '../store'
+import { sanitizeRichTextHtml } from '../utils/safe-html'
 const { openSettings } = useGlobalState()
+const safeCopyright = computed(() => sanitizeRichTextHtml(openSettings.value.copyright || ''))
 
 
 const { t } = useI18n({
@@ -26,7 +29,7 @@ const { t } = useI18n({
                     {{ t('copyright') }} © 2023-{{ new Date().getFullYear() }}
                 </n-text>
                 <n-text depth="3" style="font-size: 12px;">
-                    <div v-html="openSettings.copyright"></div>
+                    <div v-html="safeCopyright"></div>
                 </n-text>
             </n-space>
         </div>

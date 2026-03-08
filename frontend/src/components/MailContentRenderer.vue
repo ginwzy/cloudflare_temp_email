@@ -1,11 +1,12 @@
 <script setup>
-import { ref, watch, onBeforeUnmount } from "vue";
+import { computed, ref, watch, onBeforeUnmount } from "vue";
 import { useI18n } from 'vue-i18n'
 import { CloudDownloadRound, ReplyFilled, ForwardFilled, FullscreenRound } from '@vicons/material'
 import ShadowHtmlComponent from "./ShadowHtmlComponent.vue";
 import AiExtractInfo from "./AiExtractInfo.vue";
 import { getDownloadEmlUrl, revokeMailObjectUrls } from '../utils/email-parser';
 import { utcToLocalDate } from '../utils';
+import { buildSandboxedMailSrcdoc } from '../utils/safe-html';
 import { useGlobalState } from '../store';
 
 const { preferShowTextMail, useIframeShowMail, useUTCDate } = useGlobalState();
@@ -87,6 +88,7 @@ const curAttachments = ref([]);
 const attachmentLoding = ref(false);
 const showFullscreen = ref(false);
 const downloadMailUrl = ref('');
+const safeMailSrcdoc = computed(() => buildSandboxedMailSrcdoc(props.mail?.message || ''));
 
 const handleDelete = () => {
   props.onDelete();
@@ -217,7 +219,13 @@ onBeforeUnmount(() => {
     <!-- 邮件内容 -->
     <div class="mail-content">
       <pre v-if="showTextMail" class="mail-text">{{ mail.text }}</pre>
-      <iframe v-else-if="useIframeShowMail" :srcdoc="mail.message" class="mail-iframe">
+      <iframe
+        v-else-if="useIframeShowMail"
+        :srcdoc="safeMailSrcdoc"
+        class="mail-iframe"
+        sandbox=""
+        referrerpolicy="no-referrer"
+      >
       </iframe>
       <ShadowHtmlComponent v-else :key="mail.id" :htmlContent="mail.message" class="mail-html" />
     </div>
@@ -228,7 +236,13 @@ onBeforeUnmount(() => {
     <n-drawer-content :title="mail.subject" closable>
       <div class="fullscreen-mail-content">
         <pre v-if="showTextMail" class="mail-text">{{ mail.text }}</pre>
-        <iframe v-else-if="useIframeShowMail" :srcdoc="mail.message" class="mail-iframe">
+        <iframe
+          v-else-if="useIframeShowMail"
+          :srcdoc="safeMailSrcdoc"
+          class="mail-iframe"
+          sandbox=""
+          referrerpolicy="no-referrer"
+        >
         </iframe>
         <ShadowHtmlComponent v-else :key="mail.id" :htmlContent="mail.message" class="mail-html" />
       </div>

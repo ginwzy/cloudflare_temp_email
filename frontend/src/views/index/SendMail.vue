@@ -2,17 +2,19 @@
 import '@wangeditor/editor/dist/css/style.css'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import { useI18n } from 'vue-i18n'
-import { onMounted, onBeforeUnmount, ref, shallowRef } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminContact from '../common/AdminContact.vue'
 
 import { useGlobalState } from '../../store'
 import { api } from '../../api'
+import { sanitizeRichTextHtml } from '../../utils/safe-html'
 
 const message = useMessage()
 const router = useRouter()
 const isPreview = ref(false)
 const editorRef = shallowRef()
+const safePreviewHtml = computed(() => sanitizeRichTextHtml(sendMailModel.value.content || ''))
 
 const { settings, sendMailModel, userSettings } = useGlobalState()
 
@@ -190,7 +192,7 @@ onMounted(async () => {
                         </n-form-item>
                         <n-form-item :label="t('content')" label-placement="top">
                             <n-card :bordered="false" embedded v-if="isPreview">
-                                <div v-html="sendMailModel.content" />
+                                <div v-html="safePreviewHtml" />
                             </n-card>
                             <div v-else-if="sendMailModel.contentType == 'rich'" style="border: 1px solid #ccc">
                                 <Toolbar style="border-bottom: 1px solid #ccc" :defaultConfig="toolbarConfig"
