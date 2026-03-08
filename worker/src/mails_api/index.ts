@@ -50,7 +50,7 @@ api.get('/api/mails', async (c) => {
     }
     try {
         return await handleListQuery(c,
-            `SELECT id, message_id, source, subject, address, metadata, created_at FROM raw_mails where address = ?`,
+            `SELECT id, message_id, source, COALESCE(NULLIF(subject, ''), (${RAW_MAIL_SUBJECT_SQL})) as subject, address, metadata, created_at FROM raw_mails where address = ?`,
             countQuery,
             [address], limit, offset
         );

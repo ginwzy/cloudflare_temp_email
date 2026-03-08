@@ -87,7 +87,7 @@ app.get('/open_api/api/mails', async (c) => {
     const { limit, offset } = c.req.query();
     try {
         return await handleListQuery(c,
-            `SELECT id, message_id, source, subject, address, metadata, created_at FROM raw_mails WHERE address = ?`,
+            `SELECT id, message_id, source, COALESCE(NULLIF(subject, ''), (${RAW_MAIL_SUBJECT_SQL})) as subject, address, metadata, created_at FROM raw_mails WHERE address = ?`,
             `SELECT count(*) as count FROM raw_mails WHERE address = ?`,
             [address], limit || '20', offset || '0'
         );
