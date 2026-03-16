@@ -1,0 +1,6 @@
+{"file": ".claude/commands/trellis/finish-work.md", "reason": "Finish work checklist"}
+{"file": ".trellis/spec/shared/index.md", "reason": "Shared coding standards"}
+{"file": ".claude/commands/trellis/check-backend.md", "reason": "Backend check spec"}
+{"file": "worker/src/open_api/index.ts", "reason": "Verify simplified auth flow"}
+{"file": "worker/src/admin_api/db_api.ts", "reason": "Verify migration correctness"}
+{"file": "frontend/src/views/admin/ApiKeyManagement.vue", "reason": "Verify frontend updates"}

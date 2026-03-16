@@ -1,0 +1,41 @@
+{
+  "id": "telegram-inspired-inbox-refresh",
+  "name": "telegram-inspired-inbox-refresh",
+  "title": "Telegram-Inspired Inbox Refresh",
+  "description": "Telegram-inspired frontend refresh direction, including static preview and implementation guardrails for inbox-first UI updates.",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "priority": "P1",
+  "creator": "nate",
+  "assignee": "nate",
+  "createdAt": "2026-03-16",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "current_phase": 0,
+  "next_action": [
+    {
+      "phase": 1,
+      "action": "implement"
+    },
+    {
+      "phase": 2,
+      "action": "check"
+    },
+    {
+      "phase": 3,
+      "action": "finish"
+    },
+    {
+      "phase": 4,
+      "action": "create-pr"
+    }
+  ],
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "relatedFiles": [],
+  "notes": ""
+}

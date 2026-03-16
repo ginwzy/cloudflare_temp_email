@@ -1,0 +1,6 @@
+{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend development guide"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend verification requirements including motion and mobile checks"}
+{"file": ".trellis/spec/frontend/visual-design-guidelines.md", "reason": "Telegram-inspired target visual system and motion contract"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component composition and styling conventions for inbox UI changes"}
+{"file": "frontend/public/telegram-inspired-draft.html", "reason": "Static draft reference for visual hierarchy, surfaces, and motion tone"}

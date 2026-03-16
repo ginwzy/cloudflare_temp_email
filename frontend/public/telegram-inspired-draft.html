@@ -1,0 +1,1824 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Telegram Inspired Draft Preview</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+      :root {
+        color-scheme: light;
+        --demo-font: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --demo-primary: #2f6fed;
+        --demo-primary-hover: #255fdc;
+        --demo-primary-soft: #e5eeff;
+        --demo-accent: #22c55e;
+        --demo-bg: #edf3fb;
+        --demo-bg-muted: #e3ecf8;
+        --demo-surface: rgba(255, 255, 255, 0.9);
+        --demo-surface-strong: #ffffff;
+        --demo-surface-soft: rgba(247, 250, 253, 0.86);
+        --demo-surface-active: #edf4ff;
+        --demo-border: rgba(203, 216, 231, 0.86);
+        --demo-border-strong: #bfd0e4;
+        --demo-text: #11253f;
+        --demo-text-secondary: #52667d;
+        --demo-text-muted: #7a8ea7;
+        --demo-danger: #ef4444;
+        --demo-warning: #f59e0b;
+        --demo-shadow-sm: 0 2px 10px rgba(17, 37, 63, 0.05);
+        --demo-shadow-md: 0 18px 48px rgba(17, 37, 63, 0.08);
+        --demo-shadow-lg: 0 32px 90px rgba(17, 37, 63, 0.14);
+        --demo-radius-xl: 28px;
+        --demo-radius-lg: 22px;
+        --demo-radius-md: 16px;
+        --demo-radius-sm: 12px;
+        --demo-motion-fast: 160ms;
+        --demo-motion-base: 220ms;
+        --demo-motion-slow: 320ms;
+        --demo-ease: cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      body[data-theme="dark"] {
+        color-scheme: dark;
+        --demo-primary: #60a5fa;
+        --demo-primary-hover: #7ab7ff;
+        --demo-primary-soft: rgba(96, 165, 250, 0.18);
+        --demo-accent: #34d399;
+        --demo-bg: #09111b;
+        --demo-bg-muted: #101b28;
+        --demo-surface: rgba(19, 33, 49, 0.88);
+        --demo-surface-strong: #152133;
+        --demo-surface-soft: rgba(24, 38, 58, 0.82);
+        --demo-surface-active: #1e3554;
+        --demo-border: rgba(43, 62, 86, 0.94);
+        --demo-border-strong: #375170;
+        --demo-text: #ebf3ff;
+        --demo-text-secondary: #b0c1d7;
+        --demo-text-muted: #8193ab;
+        --demo-shadow-sm: 0 8px 24px rgba(4, 10, 18, 0.25);
+        --demo-shadow-md: 0 24px 64px rgba(4, 10, 18, 0.36);
+        --demo-shadow-lg: 0 32px 90px rgba(4, 10, 18, 0.5);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        min-height: 100%;
+      }
+
+      body {
+        margin: 0;
+        font-family: var(--demo-font);
+        color: var(--demo-text);
+        background:
+          radial-gradient(circle at top left, rgba(47, 111, 237, 0.16), transparent 28%),
+          radial-gradient(circle at top right, rgba(34, 197, 94, 0.1), transparent 22%),
+          linear-gradient(180deg, var(--demo-bg) 0%, var(--demo-bg-muted) 100%);
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.18;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        background-size: 26px 26px;
+        mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.7), transparent 90%);
+      }
+
+      .demo-shell {
+        width: min(1460px, calc(100vw - 32px));
+        margin: 24px auto 48px;
+      }
+
+      .demo-topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 18px;
+        margin-bottom: 18px;
+        border: 1px solid var(--demo-border);
+        border-radius: 18px;
+        background: color-mix(in srgb, var(--demo-surface) 88%, transparent);
+        backdrop-filter: blur(18px);
+        box-shadow: var(--demo-shadow-sm);
+      }
+
+      .demo-title {
+        display: grid;
+        gap: 6px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        width: fit-content;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: var(--demo-primary-soft);
+        color: var(--demo-primary);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .eyebrow-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--demo-primary);
+        box-shadow: 0 0 0 5px color-mix(in srgb, var(--demo-primary) 18%, transparent);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(28px, 4vw, 42px);
+        line-height: 1.05;
+        letter-spacing: -0.04em;
+      }
+
+      .demo-copy {
+        margin: 0;
+        max-width: 760px;
+        color: var(--demo-text-secondary);
+        font-size: 14px;
+        line-height: 1.7;
+      }
+
+      .demo-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+
+      .control-button {
+        appearance: none;
+        border: 1px solid var(--demo-border);
+        background: var(--demo-surface-strong);
+        color: var(--demo-text);
+        border-radius: 14px;
+        padding: 12px 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition:
+          transform var(--demo-motion-fast) var(--demo-ease),
+          background-color var(--demo-motion-fast) var(--demo-ease),
+          border-color var(--demo-motion-fast) var(--demo-ease),
+          box-shadow var(--demo-motion-fast) var(--demo-ease);
+      }
+
+      .control-button:hover,
+      .control-button:focus-visible {
+        transform: translateY(-1px);
+        border-color: var(--demo-border-strong);
+        box-shadow: var(--demo-shadow-sm);
+        outline: none;
+      }
+
+      .control-button.primary {
+        background: linear-gradient(180deg, color-mix(in srgb, var(--demo-primary) 90%, white 10%), var(--demo-primary));
+        border-color: color-mix(in srgb, var(--demo-primary) 72%, black 8%);
+        color: white;
+      }
+
+      .stage-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.72fr);
+        gap: 18px;
+        align-items: start;
+      }
+
+      .panel {
+        border: 1px solid var(--demo-border);
+        background: var(--demo-surface);
+        border-radius: var(--demo-radius-xl);
+        backdrop-filter: blur(18px);
+        box-shadow: var(--demo-shadow-md);
+        overflow: hidden;
+      }
+
+      .workspace {
+        min-height: 860px;
+        display: grid;
+        grid-template-columns: 260px 390px minmax(0, 1fr);
+        background:
+          linear-gradient(180deg, color-mix(in srgb, var(--demo-surface-soft) 94%, transparent), color-mix(in srgb, var(--demo-surface) 96%, transparent));
+      }
+
+      .workspace > * {
+        min-width: 0;
+      }
+
+      .rail,
+      .list-panel,
+      .detail-panel {
+        position: relative;
+      }
+
+      .rail {
+        padding: 18px;
+        border-right: 1px solid var(--demo-border);
+        background:
+          linear-gradient(180deg, color-mix(in srgb, var(--demo-surface-soft) 96%, transparent), transparent),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.14), transparent);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 18px;
+        padding: 8px;
+      }
+
+      .brand img {
+        width: 38px;
+        height: 38px;
+        border-radius: 13px;
+        box-shadow: var(--demo-shadow-sm);
+      }
+
+      .brand-title {
+        display: grid;
+        gap: 2px;
+      }
+
+      .brand-title strong {
+        font-size: 14px;
+        letter-spacing: -0.02em;
+      }
+
+      .brand-title span {
+        color: var(--demo-text-muted);
+        font-size: 12px;
+      }
+
+      .account-card {
+        padding: 14px;
+        border-radius: 18px;
+        background:
+          linear-gradient(145deg, color-mix(in srgb, var(--demo-primary-soft) 80%, var(--demo-surface-strong) 20%), color-mix(in srgb, var(--demo-surface-strong) 86%, transparent)),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent);
+        border: 1px solid color-mix(in srgb, var(--demo-primary) 18%, var(--demo-border));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      }
+
+      .account-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+        color: var(--demo-text-secondary);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .online-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--demo-accent);
+        box-shadow: 0 0 0 6px color-mix(in srgb, var(--demo-accent) 16%, transparent);
+      }
+
+      .account-address {
+        font-size: 14px;
+        line-height: 1.55;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      .account-meta {
+        margin-top: 8px;
+        color: var(--demo-text-secondary);
+        font-size: 12px;
+      }
+
+      .nav-group {
+        margin-top: 18px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-height: 48px;
+        padding: 11px 14px;
+        border: 1px solid transparent;
+        border-radius: 15px;
+        color: var(--demo-text-secondary);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition:
+          transform var(--demo-motion-fast) var(--demo-ease),
+          color var(--demo-motion-fast) var(--demo-ease),
+          background-color var(--demo-motion-fast) var(--demo-ease),
+          border-color var(--demo-motion-fast) var(--demo-ease),
+          box-shadow var(--demo-motion-fast) var(--demo-ease);
+      }
+
+      .nav-item:hover,
+      .nav-item:focus-visible {
+        transform: translateY(-1px);
+        background: color-mix(in srgb, var(--demo-surface-strong) 84%, var(--demo-primary-soft) 16%);
+        border-color: var(--demo-border);
+        color: var(--demo-text);
+        outline: none;
+      }
+
+      .nav-item.active {
+        background: linear-gradient(180deg, color-mix(in srgb, var(--demo-primary-soft) 92%, white 8%), color-mix(in srgb, var(--demo-primary-soft) 78%, var(--demo-surface-strong) 22%));
+        border-color: color-mix(in srgb, var(--demo-primary) 26%, var(--demo-border));
+        color: var(--demo-primary);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.26);
+      }
+
+      .nav-icon,
+      .chip-icon {
+        width: 20px;
+        height: 20px;
+        flex: 0 0 20px;
+      }
+
+      .nav-footer {
+        margin-top: auto;
+        padding-top: 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        border-top: 1px solid var(--demo-border);
+      }
+
+      .pill-note {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 10px;
+        border-radius: 999px;
+        color: var(--demo-text-secondary);
+        background: var(--demo-surface-soft);
+        border: 1px solid var(--demo-border);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .list-panel {
+        border-right: 1px solid var(--demo-border);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent),
+          color-mix(in srgb, var(--demo-surface-soft) 96%, transparent);
+      }
+
+      .toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 18px;
+        border-bottom: 1px solid var(--demo-border);
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: color-mix(in srgb, var(--demo-surface-soft) 84%, transparent);
+        backdrop-filter: blur(16px);
+      }
+
+      .toolbar-copy {
+        display: grid;
+        gap: 4px;
+      }
+
+      .toolbar-copy strong {
+        font-size: 15px;
+        letter-spacing: -0.02em;
+      }
+
+      .toolbar-copy span {
+        color: var(--demo-text-muted);
+        font-size: 12px;
+      }
+
+      .toolbar-actions {
+        display: inline-flex;
+        gap: 8px;
+      }
+
+      .toolbar-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 14px;
+        border: 1px solid var(--demo-border);
+        background: color-mix(in srgb, var(--demo-surface-strong) 92%, transparent);
+        color: var(--demo-text-secondary);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition:
+          transform var(--demo-motion-fast) var(--demo-ease),
+          color var(--demo-motion-fast) var(--demo-ease),
+          border-color var(--demo-motion-fast) var(--demo-ease),
+          background-color var(--demo-motion-fast) var(--demo-ease),
+          box-shadow var(--demo-motion-fast) var(--demo-ease);
+      }
+
+      .toolbar-icon:hover,
+      .toolbar-icon:focus-visible {
+        transform: translateY(-1px);
+        color: var(--demo-primary);
+        border-color: color-mix(in srgb, var(--demo-primary) 24%, var(--demo-border));
+        background: var(--demo-surface-active);
+        box-shadow: var(--demo-shadow-sm);
+        outline: none;
+      }
+
+      .search-shell {
+        padding: 0 18px 18px;
+      }
+
+      .search-box {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 48px;
+        padding: 0 14px;
+        border-radius: 16px;
+        border: 1px solid var(--demo-border);
+        background: color-mix(in srgb, var(--demo-surface-strong) 84%, transparent);
+        color: var(--demo-text-muted);
+      }
+
+      .search-box input {
+        flex: 1;
+        min-width: 0;
+        border: none;
+        background: transparent;
+        color: var(--demo-text);
+        font: inherit;
+      }
+
+      .search-box input:focus {
+        outline: none;
+      }
+
+      .mail-list {
+        padding: 0 10px 12px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .mail-row {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr);
+        gap: 12px;
+        align-items: start;
+        padding: 14px 14px 13px;
+        border-radius: 18px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: inherit;
+        text-align: left;
+        cursor: pointer;
+        transition:
+          transform var(--demo-motion-fast) var(--demo-ease),
+          background-color var(--demo-motion-fast) var(--demo-ease),
+          border-color var(--demo-motion-fast) var(--demo-ease),
+          box-shadow var(--demo-motion-fast) var(--demo-ease);
+      }
+
+      .mail-row:hover,
+      .mail-row:focus-visible {
+        transform: translateY(-1px);
+        background: color-mix(in srgb, var(--demo-surface-soft) 92%, transparent);
+        border-color: var(--demo-border);
+        box-shadow: var(--demo-shadow-sm);
+        outline: none;
+      }
+
+      .mail-row.active {
+        background: linear-gradient(180deg, color-mix(in srgb, var(--demo-surface-active) 88%, white 12%), color-mix(in srgb, var(--demo-surface-active) 76%, var(--demo-surface-strong) 24%));
+        border-color: color-mix(in srgb, var(--demo-primary) 24%, var(--demo-border));
+        box-shadow: var(--demo-shadow-sm);
+      }
+
+      .mail-row.loading {
+        pointer-events: none;
+      }
+
+      .mail-row.loading .mail-avatar,
+      .mail-row.loading .line {
+        position: relative;
+        overflow: hidden;
+        background: color-mix(in srgb, var(--demo-border) 70%, transparent);
+        color: transparent;
+      }
+
+      .mail-row.loading .mail-avatar::after,
+      .mail-row.loading .line::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        transform: translateX(-100%);
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.52), transparent);
+        animation: shimmer 1.2s infinite;
+      }
+
+      .mail-row.loading .line {
+        border-radius: 999px;
+        height: 10px;
+        margin: 4px 0;
+      }
+
+      .mail-row.loading .line:nth-child(2) {
+        width: 58%;
+      }
+
+      .mail-row.loading .line:nth-child(3) {
+        width: 82%;
+      }
+
+      .mail-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      }
+
+      .mail-copy {
+        min-width: 0;
+        display: grid;
+        gap: 8px;
+      }
+
+      .mail-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 10px;
+      }
+
+      .mail-head strong {
+        min-width: 0;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .mail-head time {
+        flex: 0 0 auto;
+        color: var(--demo-text-muted);
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .mail-subject {
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .mail-preview {
+        color: var(--demo-text-secondary);
+        font-size: 12px;
+        line-height: 1.55;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .mail-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        width: fit-content;
+        min-height: 26px;
+        padding: 0 10px;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .chip.info {
+        background: var(--demo-primary-soft);
+        color: var(--demo-primary);
+      }
+
+      .chip.success {
+        background: color-mix(in srgb, var(--demo-accent) 14%, transparent);
+        color: var(--demo-accent);
+      }
+
+      .chip.neutral {
+        background: color-mix(in srgb, var(--demo-surface-soft) 88%, transparent);
+        color: var(--demo-text-secondary);
+        border-color: var(--demo-border);
+      }
+
+      .detail-panel {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        background:
+          radial-gradient(circle at top right, color-mix(in srgb, var(--demo-primary-soft) 72%, transparent), transparent 30%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.14), transparent),
+          color-mix(in srgb, var(--demo-surface-strong) 96%, transparent);
+      }
+
+      .detail-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 18px;
+        border-radius: 22px;
+        border: 1px solid var(--demo-border);
+        background: color-mix(in srgb, var(--demo-surface-soft) 92%, transparent);
+        box-shadow: var(--demo-shadow-sm);
+      }
+
+      .detail-title {
+        display: grid;
+        gap: 9px;
+      }
+
+      .detail-title h2 {
+        margin: 0;
+        font-size: 24px;
+        line-height: 1.05;
+        letter-spacing: -0.04em;
+      }
+
+      .detail-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .meta-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 30px;
+        padding: 0 10px;
+        border-radius: 999px;
+        border: 1px solid var(--demo-border);
+        background: color-mix(in srgb, var(--demo-surface-strong) 78%, transparent);
+        color: var(--demo-text-secondary);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .detail-actions {
+        display: inline-flex;
+        gap: 8px;
+      }
+
+      .icon-button {
+        width: 42px;
+        height: 42px;
+        border-radius: 15px;
+        border: 1px solid var(--demo-border);
+        background: color-mix(in srgb, var(--demo-surface-strong) 84%, transparent);
+        color: var(--demo-text-secondary);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition:
+          transform var(--demo-motion-fast) var(--demo-ease),
+          border-color var(--demo-motion-fast) var(--demo-ease),
+          color var(--demo-motion-fast) var(--demo-ease),
+          background-color var(--demo-motion-fast) var(--demo-ease),
+          box-shadow var(--demo-motion-fast) var(--demo-ease);
+      }
+
+      .icon-button:hover,
+      .icon-button:focus-visible {
+        transform: translateY(-1px);
+        color: var(--demo-primary);
+        border-color: color-mix(in srgb, var(--demo-primary) 26%, var(--demo-border));
+        background: var(--demo-surface-active);
+        box-shadow: var(--demo-shadow-sm);
+        outline: none;
+      }
+
+      .detail-body {
+        display: grid;
+        gap: 16px;
+      }
+
+      .detail-card {
+        border-radius: 22px;
+        border: 1px solid var(--demo-border);
+        background: color-mix(in srgb, var(--demo-surface) 96%, transparent);
+        box-shadow: var(--demo-shadow-sm);
+      }
+
+      .brief-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 16px;
+      }
+
+      .message-card {
+        padding: 20px;
+      }
+
+      .message-stack {
+        display: grid;
+        gap: 16px;
+      }
+
+      .message-block {
+        max-width: 100%;
+        padding: 16px 18px;
+        border-radius: 20px;
+        background: color-mix(in srgb, var(--demo-surface-soft) 94%, transparent);
+        border: 1px solid var(--demo-border);
+      }
+
+      .message-block.primary {
+        background: linear-gradient(180deg, color-mix(in srgb, var(--demo-primary-soft) 88%, white 12%), color-mix(in srgb, var(--demo-primary-soft) 72%, var(--demo-surface-strong) 28%));
+        border-color: color-mix(in srgb, var(--demo-primary) 22%, var(--demo-border));
+      }
+
+      .message-label {
+        margin-bottom: 8px;
+        color: var(--demo-text-muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .message-block p {
+        margin: 0;
+        color: var(--demo-text);
+        font-size: 14px;
+        line-height: 1.75;
+      }
+
+      .insight-card {
+        padding: 18px;
+        display: grid;
+        gap: 12px;
+      }
+
+      .insight-card h3,
+      .attachments-card h3,
+      .motion-card h3 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      .insight-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .insight-item {
+        display: grid;
+        gap: 4px;
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: color-mix(in srgb, var(--demo-surface-soft) 94%, transparent);
+        border: 1px solid var(--demo-border);
+      }
+
+      .insight-item strong {
+        font-size: 13px;
+      }
+
+      .insight-item span {
+        color: var(--demo-text-secondary);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .attachments-card {
+        padding: 18px;
+        display: grid;
+        gap: 12px;
+      }
+
+      .attachment-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .attachment {
+        padding: 14px;
+        border-radius: 16px;
+        border: 1px solid var(--demo-border);
+        background: color-mix(in srgb, var(--demo-surface-soft) 95%, transparent);
+        transition:
+          transform var(--demo-motion-fast) var(--demo-ease),
+          box-shadow var(--demo-motion-fast) var(--demo-ease),
+          border-color var(--demo-motion-fast) var(--demo-ease);
+      }
+
+      .attachment:hover {
+        transform: translateY(-1px);
+        border-color: var(--demo-border-strong);
+        box-shadow: var(--demo-shadow-sm);
+      }
+
+      .attachment strong {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 13px;
+      }
+
+      .attachment span {
+        color: var(--demo-text-secondary);
+        font-size: 12px;
+      }
+
+      .side-column {
+        display: grid;
+        gap: 18px;
+      }
+
+      .concept-card,
+      .motion-card,
+      .mobile-card {
+        padding: 18px;
+      }
+
+      .concept-card {
+        display: grid;
+        gap: 14px;
+      }
+
+      .concept-card h3 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: -0.03em;
+      }
+
+      .concept-card p {
+        margin: 0;
+        color: var(--demo-text-secondary);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .token-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .token-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        border-radius: 16px;
+        border: 1px solid var(--demo-border);
+        background: color-mix(in srgb, var(--demo-surface-soft) 92%, transparent);
+      }
+
+      .token-row strong {
+        font-size: 12px;
+        color: var(--demo-text-secondary);
+      }
+
+      .swatch {
+        width: 40px;
+        height: 24px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24);
+      }
+
+      .motion-card {
+        display: grid;
+        gap: 14px;
+      }
+
+      .motion-rail {
+        display: grid;
+        gap: 10px;
+      }
+
+      .motion-sample {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 13px 14px;
+        border-radius: 16px;
+        border: 1px solid var(--demo-border);
+        background: color-mix(in srgb, var(--demo-surface-soft) 94%, transparent);
+      }
+
+      .motion-sample:hover .sample-dot {
+        transform: translateX(6px);
+      }
+
+      .motion-sample span {
+        color: var(--demo-text-secondary);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .sample-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--demo-primary);
+        transition: transform var(--demo-motion-fast) var(--demo-ease);
+      }
+
+      .mobile-card {
+        display: grid;
+        gap: 16px;
+      }
+
+      .phone {
+        position: relative;
+        margin: 0 auto;
+        width: 290px;
+        aspect-ratio: 290 / 600;
+        border-radius: 36px;
+        padding: 12px;
+        background: linear-gradient(180deg, rgba(18, 29, 42, 0.9), rgba(34, 48, 66, 0.86));
+        box-shadow: var(--demo-shadow-lg);
+      }
+
+      .phone-screen {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        border-radius: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: linear-gradient(180deg, color-mix(in srgb, var(--demo-bg) 88%, transparent), color-mix(in srgb, var(--demo-bg-muted) 96%, transparent));
+      }
+
+      .phone-header {
+        padding: 18px 18px 14px;
+        display: grid;
+        gap: 12px;
+      }
+
+      .phone-header strong {
+        font-size: 18px;
+        letter-spacing: -0.03em;
+      }
+
+      .phone-search {
+        min-height: 42px;
+        border-radius: 14px;
+        border: 1px solid var(--demo-border);
+        background: color-mix(in srgb, var(--demo-surface-strong) 84%, transparent);
+      }
+
+      .phone-list {
+        display: grid;
+        gap: 8px;
+        padding: 0 12px 86px;
+      }
+
+      .phone-row {
+        display: grid;
+        grid-template-columns: 38px minmax(0, 1fr);
+        gap: 10px;
+        align-items: start;
+        padding: 12px;
+        border-radius: 18px;
+        background: color-mix(in srgb, var(--demo-surface-soft) 95%, transparent);
+        border: 1px solid var(--demo-border);
+      }
+
+      .phone-bottom {
+        position: absolute;
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        min-height: 68px;
+        padding: 8px 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        border-radius: 22px;
+        border: 1px solid var(--demo-border);
+        background: color-mix(in srgb, var(--demo-surface) 88%, transparent);
+        backdrop-filter: blur(14px);
+      }
+
+      .phone-tab {
+        flex: 1;
+        min-width: 0;
+        display: grid;
+        justify-items: center;
+        gap: 4px;
+        color: var(--demo-text-muted);
+        font-size: 10px;
+        font-weight: 700;
+      }
+
+      .phone-tab.active {
+        color: var(--demo-primary);
+      }
+
+      .phone-tab.cta {
+        color: #ffffff;
+      }
+
+      .phone-tab.cta .phone-tab-pill {
+        width: 44px;
+        height: 44px;
+        border-radius: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(180deg, color-mix(in srgb, var(--demo-primary) 90%, white 10%), var(--demo-primary));
+        box-shadow: 0 12px 24px color-mix(in srgb, var(--demo-primary) 22%, transparent);
+      }
+
+      .sheet {
+        position: absolute;
+        left: 10px;
+        right: 10px;
+        bottom: 82px;
+        padding: 14px;
+        border-radius: 22px 22px 18px 18px;
+        border: 1px solid var(--demo-border);
+        background: color-mix(in srgb, var(--demo-surface) 92%, transparent);
+        backdrop-filter: blur(16px);
+        box-shadow: var(--demo-shadow-md);
+        transform: translateY(22px);
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          transform var(--demo-motion-base) var(--demo-ease),
+          opacity var(--demo-motion-base) var(--demo-ease);
+      }
+
+      .phone-screen.sheet-open .sheet {
+        transform: translateY(0);
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .sheet-handle {
+        width: 52px;
+        height: 5px;
+        border-radius: 999px;
+        margin: 0 auto 12px;
+        background: color-mix(in srgb, var(--demo-border-strong) 72%, transparent);
+      }
+
+      .sheet-grid {
+        display: grid;
+        gap: 8px;
+      }
+
+      .sheet-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-height: 48px;
+        padding: 0 12px;
+        border-radius: 16px;
+        background: color-mix(in srgb, var(--demo-surface-soft) 92%, transparent);
+        border: 1px solid var(--demo-border);
+        color: var(--demo-text);
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .stagger {
+        opacity: 0;
+        transform: translateY(18px);
+        animation: rise var(--demo-motion-slow) var(--demo-ease) forwards;
+      }
+
+      .delay-1 { animation-delay: 40ms; }
+      .delay-2 { animation-delay: 100ms; }
+      .delay-3 { animation-delay: 160ms; }
+      .delay-4 { animation-delay: 220ms; }
+      .delay-5 { animation-delay: 280ms; }
+
+      .detail-swap {
+        animation: detailSwap var(--demo-motion-base) var(--demo-ease);
+      }
+
+      @keyframes rise {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes detailSwap {
+        from {
+          opacity: 0;
+          transform: translateX(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      @keyframes shimmer {
+        to {
+          transform: translateX(100%);
+        }
+      }
+
+      @media (max-width: 1280px) {
+        .stage-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .side-column {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 1120px) {
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+
+        .rail,
+        .list-panel {
+          border-right: none;
+          border-bottom: 1px solid var(--demo-border);
+        }
+      }
+
+      @media (max-width: 880px) {
+        .demo-shell {
+          width: min(100vw - 20px, 100%);
+          margin: 10px auto 30px;
+        }
+
+        .demo-topbar {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .demo-actions {
+          justify-content: stretch;
+        }
+
+        .control-button {
+          flex: 1;
+          justify-content: center;
+        }
+
+        .side-column {
+          grid-template-columns: 1fr;
+        }
+
+        .brief-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 1ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 1ms !important;
+          scroll-behavior: auto !important;
+        }
+      }
+    </style>
+  </head>
+  <body data-theme="light">
+    <main class="demo-shell">
+      <header class="demo-topbar stagger delay-1">
+        <div class="demo-title">
+          <span class="eyebrow">
+            <span class="eyebrow-dot"></span>
+            Static Design Draft
+          </span>
+          <h1>Telegram-inspired inbox workspace preview</h1>
+          <p class="demo-copy">
+            这是一版只用于预览风格和动效的静态草稿。它借用了 Telegram 的信息层级、面板过渡和触感反馈，但保留邮箱工具的阅读语义，没有把页面伪装成聊天 app。
+          </p>
+        </div>
+        <div class="demo-actions">
+          <button class="control-button" type="button" id="theme-toggle" aria-label="切换浅色和深色预览">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 3v2.5M12 18.5V21M4.93 4.93l1.77 1.77M17.3 17.3l1.77 1.77M3 12h2.5M18.5 12H21M4.93 19.07l1.77-1.77M17.3 6.7l1.77-1.77M16 12a4 4 0 1 1-8 0a4 4 0 0 1 8 0Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+            </svg>
+            切换主题
+          </button>
+          <button class="control-button" type="button" id="refresh-demo" aria-label="预览列表刷新骨架效果">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            列表刷新动效
+          </button>
+          <button class="control-button primary" type="button" id="sheet-toggle" aria-label="预览移动端底部抽屉">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M6 9l6 6l6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            打开移动端抽屉
+          </button>
+        </div>
+      </header>
+
+      <section class="stage-grid">
+        <section class="panel workspace stagger delay-2" aria-label="桌面工作区预览">
+          <aside class="rail">
+            <div class="brand">
+              <img src="/logo.png" alt="Temp Email logo" />
+              <div class="brand-title">
+                <strong>Temp Mail Draft</strong>
+                <span>Inbox-first workspace</span>
+              </div>
+            </div>
+
+            <div class="account-card">
+              <div class="account-status">
+                <span class="online-dot"></span>
+                当前地址在线
+              </div>
+              <div class="account-address">alpha-preview@draft.mail</div>
+              <div class="account-meta">新邮件会在 18 秒内自动刷新，操作区强调低噪音反馈。</div>
+            </div>
+
+            <nav class="nav-group" aria-label="静态导航示例">
+              <button class="nav-item active" type="button">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M4 7.5L12 13l8-5.5M5 6h14a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Inbox
+              </button>
+              <button class="nav-item" type="button">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="m4 12 15-8v16L4 12Zm0 0h7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Sent
+              </button>
+              <button class="nav-item" type="button">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                </svg>
+                Compose
+              </button>
+              <button class="nav-item" type="button">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-11Z" stroke="currentColor" stroke-width="1.7"/><path d="M8 9h8M8 12h8M8 15h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                </svg>
+                Addresses
+              </button>
+              <button class="nav-item" type="button">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7Zm7-3.5h2M3 12h2m10-9V1M12 23v-2m6.95-15.95 1.41-1.41M3.64 20.36l1.41-1.41M3.64 3.64l1.41 1.41m14.9 14.9 1.41 1.41" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+                Settings
+              </button>
+            </nav>
+
+            <div class="nav-footer">
+              <span class="pill-note">
+                <span class="online-dot"></span>
+                Soft depth
+              </span>
+              <span class="pill-note">v draft-01</span>
+            </div>
+          </aside>
+
+          <section class="list-panel">
+            <div class="toolbar">
+              <div class="toolbar-copy">
+                <strong>Today’s messages</strong>
+                <span>紧凑列表，强化发件人、时间、主题三层层级</span>
+              </div>
+              <div class="toolbar-actions">
+                <button class="toolbar-icon" type="button" aria-label="搜索示例">
+                  <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="1.7"/>
+                    <path d="m20 20-4.2-4.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                  </svg>
+                </button>
+                <button class="toolbar-icon" type="button" aria-label="刷新示例">
+                  <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="search-shell">
+              <label class="search-box">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="1.7"/>
+                  <path d="m20 20-4.2-4.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                </svg>
+                <input value="Filter current page" aria-label="示例搜索框" readonly />
+              </label>
+            </div>
+
+            <div class="mail-list" id="mail-list"></div>
+          </section>
+
+          <section class="detail-panel">
+            <header class="detail-header">
+              <div class="detail-title">
+                <h2 id="detail-title">Verification code ready for your Alpha Preview sign-in</h2>
+                <div class="detail-meta">
+                  <span class="meta-pill" id="detail-from">From · Notion Access</span>
+                  <span class="meta-pill" id="detail-time">09:24 AM</span>
+                  <span class="meta-pill">Priority · Current context</span>
+                </div>
+              </div>
+              <div class="detail-actions">
+                <button class="icon-button" type="button" aria-label="Reply preview">
+                  <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="m10 8-4 4 4 4M7 12h10a3 3 0 0 1 3 3v1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+                <button class="icon-button" type="button" aria-label="Forward preview">
+                  <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="m14 8 4 4-4 4M7 12h10a3 3 0 0 0 3-3V8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+                <button class="icon-button" type="button" aria-label="More actions preview">
+                  <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle cx="12" cy="5" r="1.8" fill="currentColor"/>
+                    <circle cx="12" cy="12" r="1.8" fill="currentColor"/>
+                    <circle cx="12" cy="19" r="1.8" fill="currentColor"/>
+                  </svg>
+                </button>
+              </div>
+            </header>
+
+            <div class="detail-body detail-swap" id="detail-body">
+              <div class="brief-grid">
+                <section class="detail-card message-card">
+                  <div class="message-stack" id="message-stack"></div>
+                </section>
+
+                <section class="detail-card insight-card">
+                  <h3>AI extract snapshot</h3>
+                  <div class="insight-list" id="insight-list"></div>
+                </section>
+              </div>
+
+              <section class="detail-card attachments-card">
+                <h3>Attachments & linked actions</h3>
+                <div class="attachment-grid" id="attachment-grid"></div>
+              </section>
+            </div>
+          </section>
+        </section>
+
+        <aside class="side-column">
+          <section class="panel concept-card stagger delay-3">
+            <h3>What this draft is testing</h3>
+            <p>不是功能重构，而是验证三个东西是否更成立：收件箱是否更像工作区、当前上下文是否更明显、动效是否足够轻而不廉价。</p>
+            <div class="token-list">
+              <div class="token-row">
+                <strong>Primary</strong>
+                <span class="swatch" style="background:#2f6fed"></span>
+              </div>
+              <div class="token-row">
+                <strong>Surface Active</strong>
+                <span class="swatch" style="background:#eaf4ff"></span>
+              </div>
+              <div class="token-row">
+                <strong>Accent Live</strong>
+                <span class="swatch" style="background:#22c55e"></span>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel motion-card stagger delay-4">
+            <h3>Motion budget</h3>
+            <div class="motion-rail">
+              <div class="motion-sample">
+                <span>Mail row hover only lifts by 1px and strengthens surface.</span>
+                <span class="sample-dot"></span>
+              </div>
+              <div class="motion-sample">
+                <span>Detail panel swaps with fade + slide, not full-page choreography.</span>
+                <span class="sample-dot"></span>
+              </div>
+              <div class="motion-sample">
+                <span>Mobile sheet uses translateY + opacity and respects reduced motion.</span>
+                <span class="sample-dot"></span>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel mobile-card stagger delay-5">
+            <h3>Mobile draft</h3>
+            <div class="phone">
+              <div class="phone-screen" id="phone-screen">
+                <div class="phone-header">
+                  <strong>Inbox</strong>
+                  <div class="phone-search"></div>
+                </div>
+
+                <div class="phone-list" id="phone-list"></div>
+
+                <div class="sheet" aria-hidden="true">
+                  <div class="sheet-handle"></div>
+                  <div class="sheet-grid">
+                    <div class="sheet-item">Account settings</div>
+                    <div class="sheet-item">Address switcher</div>
+                    <div class="sheet-item">Appearance</div>
+                    <div class="sheet-item">Preview language</div>
+                  </div>
+                </div>
+
+                <div class="phone-bottom">
+                  <div class="phone-tab active">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M4 7.5L12 13l8-5.5M5 6h14a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Inbox
+                  </div>
+                  <div class="phone-tab">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="m4 12 15-8v16L4 12Zm0 0h7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Sent
+                  </div>
+                  <div class="phone-tab cta">
+                    <span class="phone-tab-pill">
+                      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                      </svg>
+                    </span>
+                    Compose
+                  </div>
+                  <div class="phone-tab">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <circle cx="12" cy="5" r="1.8" fill="currentColor"/>
+                      <circle cx="12" cy="12" r="1.8" fill="currentColor"/>
+                      <circle cx="12" cy="19" r="1.8" fill="currentColor"/>
+                    </svg>
+                    More
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </aside>
+      </section>
+    </main>
+
+    <script>
+      const mails = [
+        {
+          id: 1,
+          sender: "Notion Access",
+          senderLine: "Notion Access <verify@notion-preview.io>",
+          time: "09:24",
+          title: "Verification code ready for your Alpha Preview sign-in",
+          preview: "We noticed a fresh login from Tokyo. Your sign-in code is 438221. This preview uses stronger sender/time/subject hierarchy and a softer active state.",
+          chips: [
+            { label: "AI code · 438221", type: "info" },
+            { label: "Trust score · high", type: "success" }
+          ],
+          messages: [
+            {
+              label: "Snapshot",
+              style: "primary",
+              body: "Notion Access detected a new login request. Use verification code 438221 within the next 10 minutes. The detail panel here is designed to feel like a focused conversation context rather than a generic document page."
+            },
+            {
+              label: "Why this layout",
+              style: "",
+              body: "The header stays sticky, actions are compact, and secondary metadata is compressed into calm pills. The body avoids chat bubbles but still borrows Telegram's layered panel rhythm."
+            }
+          ],
+          insights: [
+            ["Verification code", "438221 extracted with high confidence"],
+            ["Source", "Known transactional provider, SPF + DKIM passed"],
+            ["Suggested action", "Promote code and CTA above the fold in future implementation"]
+          ],
+          attachments: [
+            ["Security briefing.pdf", "118 KB · compact action card"],
+            ["Open sign-in request", "Primary CTA styled as surface action"]
+          ]
+        },
+        {
+          id: 2,
+          sender: "Linear Updates",
+          senderLine: "Linear Updates <team@linear-preview.dev>",
+          time: "08:42",
+          title: "Sprint handoff summary and five urgent issue notes",
+          preview: "A compact message workspace should still support dense operational content. This draft shows how admin-like updates can feel calmer without becoming decorative.",
+          chips: [
+            { label: "5 issues", type: "neutral" },
+            { label: "Needs review", type: "info" }
+          ],
+          messages: [
+            {
+              label: "Snapshot",
+              style: "primary",
+              body: "Your sprint handoff is ready. Five issues need review before 14:00. The list row stays compact, but the detail panel expands the message into a more deliberate reading canvas."
+            },
+            {
+              label: "Interaction note",
+              style: "",
+              body: "Rows should never scale aggressively. Hover is only a small lift and surface shift; selection is what really changes the context."
+            }
+          ],
+          insights: [
+            ["Priority", "Multiple deadline markers detected"],
+            ["Best motion", "Fade + slide for detail transition only"],
+            ["Avoid", "Do not animate every KPI chip and action at once"]
+          ],
+          attachments: [
+            ["handoff-notes.md", "24 KB · monospace content"],
+            ["Project board", "Open in contextual side action"]
+          ]
+        },
+        {
+          id: 3,
+          sender: "Resend Digest",
+          senderLine: "Resend Digest <digest@resend-preview.dev>",
+          time: "Yesterday",
+          title: "Delivery status digest with attachment behavior recap",
+          preview: "Cards in the detail area use gentle elevation and strong grouping. Attachments and AI extracts should feel like supporting modules, not random utility fragments.",
+          chips: [
+            { label: "Digest", type: "neutral" },
+            { label: "2 attachment events", type: "success" }
+          ],
+          messages: [
+            {
+              label: "Snapshot",
+              style: "primary",
+              body: "The digest recaps delivery outcomes, webhook callbacks, and attachment writes. In this direction, utility-heavy mail still uses the same calm shell language as transactional messages."
+            },
+            {
+              label: "Attachment rhythm",
+              style: "",
+              body: "Attachments are secondary cards with the same token set. They can stagger in softly, but only after the main content context is established."
+            }
+          ],
+          insights: [
+            ["Attachment saves", "2 successful writes to S3-like storage"],
+            ["Layout", "Secondary cards grouped under the message, not mixed into the header"],
+            ["Dark mode", "Borders must stay visible even when surfaces are close"]
+          ],
+          attachments: [
+            ["delivery-log.csv", "54 KB · export action"],
+            ["view webhook payload", "Contextual utility entry"]
+          ]
+        },
+        {
+          id: 4,
+          sender: "Telegram Mini App",
+          senderLine: "Telegram Mini App <miniapp@draft.bot>",
+          time: "06:18",
+          title: "Mobile bottom sheet preview for account and appearance actions",
+          preview: "This row exists to preview the mobile drawer language: fixed bottom bar, compact tabs, and a restrained sheet transition with clear action grouping.",
+          chips: [
+            { label: "Mobile flow", type: "info" },
+            { label: "Drawer", type: "neutral" }
+          ],
+          messages: [
+            {
+              label: "Snapshot",
+              style: "primary",
+              body: "The mobile preview keeps the inbox as the primary surface. Settings and address switching move into a bottom sheet, which feels more native to the chat-style workspace."
+            },
+            {
+              label: "Motion budget",
+              style: "",
+              body: "The drawer uses translateY and opacity only. No bounce, no parallax, no giant spring choreography."
+            }
+          ],
+          insights: [
+            ["Tap target", "All primary mobile actions should stay at or above 44 by 44"],
+            ["Bottom nav", "Only Compose gets CTA emphasis"],
+            ["Reduced motion", "Sheet must collapse to near-instant for motion-sensitive users"]
+          ],
+          attachments: [
+            ["mobile-mock.png", "Reference still"],
+            ["open preferences", "Bottom sheet example action"]
+          ]
+        }
+      ];
+
+      const phoneMails = mails.slice(0, 3);
+      const listEl = document.getElementById("mail-list");
+      const phoneListEl = document.getElementById("phone-list");
+      const detailTitle = document.getElementById("detail-title");
+      const detailFrom = document.getElementById("detail-from");
+      const detailTime = document.getElementById("detail-time");
+      const messageStack = document.getElementById("message-stack");
+      const insightList = document.getElementById("insight-list");
+      const attachmentGrid = document.getElementById("attachment-grid");
+      const detailBody = document.getElementById("detail-body");
+      const bodyEl = document.body;
+      const phoneScreen = document.getElementById("phone-screen");
+      const sheetToggle = document.getElementById("sheet-toggle");
+      const themeToggle = document.getElementById("theme-toggle");
+      const refreshDemo = document.getElementById("refresh-demo");
+
+      let activeMailId = 1;
+      let sheetOpen = false;
+
+      const avatarColor = (value) => {
+        const palette = ["#2F6FED", "#7C5CFC", "#0EA5E9", "#10B981", "#F97316", "#E11D48", "#8B5CF6", "#06B6D4"];
+        let hash = 0;
+        for (let i = 0; i < value.length; i += 1) {
+          hash = value.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return palette[Math.abs(hash) % palette.length];
+      };
+
+      const senderInitial = (value) => (value.trim()[0] || "?").toUpperCase();
+
+      const renderList = (loading = false) => {
+        listEl.innerHTML = "";
+
+        if (loading) {
+          for (let i = 0; i < 4; i += 1) {
+            const row = document.createElement("div");
+            row.className = "mail-row loading";
+            row.innerHTML = `
+              <div class="mail-avatar">A</div>
+              <div class="mail-copy">
+                <div class="line"></div>
+                <div class="line"></div>
+                <div class="line"></div>
+              </div>
+            `;
+            listEl.appendChild(row);
+          }
+          return;
+        }
+
+        mails.forEach((mail) => {
+          const row = document.createElement("button");
+          row.type = "button";
+          row.className = `mail-row${mail.id === activeMailId ? " active" : ""}`;
+          row.setAttribute("aria-label", `查看邮件 ${mail.title}`);
+          row.innerHTML = `
+            <span class="mail-avatar" style="background:${avatarColor(mail.sender)}">${senderInitial(mail.sender)}</span>
+            <span class="mail-copy">
+              <span class="mail-head">
+                <strong>${mail.sender}</strong>
+                <time>${mail.time}</time>
+              </span>
+              <span class="mail-subject">${mail.title}</span>
+              <span class="mail-preview">${mail.preview}</span>
+              <span class="mail-chips">
+                ${mail.chips.map((chip) => `<span class="chip ${chip.type}">${chip.label}</span>`).join("")}
+              </span>
+            </span>
+          `;
+          row.addEventListener("click", () => {
+            activeMailId = mail.id;
+            renderList();
+            renderDetail();
+          });
+          listEl.appendChild(row);
+        });
+      };
+
+      const renderPhoneList = () => {
+        phoneListEl.innerHTML = "";
+        phoneMails.forEach((mail, index) => {
+          const row = document.createElement("div");
+          row.className = "phone-row";
+          row.innerHTML = `
+            <span class="mail-avatar" style="width:38px;height:38px;border-radius:13px;background:${avatarColor(mail.sender)}">${senderInitial(mail.sender)}</span>
+            <span class="mail-copy">
+              <span class="mail-head">
+                <strong>${mail.sender}</strong>
+                <time>${index === 0 ? "now" : mail.time}</time>
+              </span>
+              <span class="mail-subject">${mail.title}</span>
+            </span>
+          `;
+          phoneListEl.appendChild(row);
+        });
+      };
+
+      const renderDetail = () => {
+        const mail = mails.find((item) => item.id === activeMailId) || mails[0];
+        detailTitle.textContent = mail.title;
+        detailFrom.textContent = `From · ${mail.sender}`;
+        detailTime.textContent = mail.time;
+
+        messageStack.innerHTML = mail.messages
+          .map(
+            (message) => `
+              <article class="message-block ${message.style}">
+                <div class="message-label">${message.label}</div>
+                <p>${message.body}</p>
+              </article>
+            `
+          )
+          .join("");
+
+        insightList.innerHTML = mail.insights
+          .map(
+            ([title, copy]) => `
+              <div class="insight-item">
+                <strong>${title}</strong>
+                <span>${copy}</span>
+              </div>
+            `
+          )
+          .join("");
+
+        attachmentGrid.innerHTML = mail.attachments
+          .map(
+            ([title, copy]) => `
+              <div class="attachment">
+                <strong>${title}</strong>
+                <span>${copy}</span>
+              </div>
+            `
+          )
+          .join("");
+
+        detailBody.classList.remove("detail-swap");
+        void detailBody.offsetWidth;
+        detailBody.classList.add("detail-swap");
+      };
+
+      const toggleSheet = () => {
+        sheetOpen = !sheetOpen;
+        phoneScreen.classList.toggle("sheet-open", sheetOpen);
+      };
+
+      themeToggle.addEventListener("click", () => {
+        const nextTheme = bodyEl.dataset.theme === "light" ? "dark" : "light";
+        bodyEl.dataset.theme = nextTheme;
+      });
+
+      refreshDemo.addEventListener("click", () => {
+        renderList(true);
+        window.setTimeout(() => {
+          renderList(false);
+        }, 1050);
+      });
+
+      sheetToggle.addEventListener("click", toggleSheet);
+
+      renderList();
+      renderPhoneList();
+      renderDetail();
+    </script>
+  </body>
+</html>
