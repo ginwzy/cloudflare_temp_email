@@ -2,55 +2,85 @@
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useGlobalState } from '../../store'
+import { getRouterPathWithLang } from '../../utils'
 import AddressManagement from '../user/AddressManagement.vue'
 import TelegramAddress from '../index/TelegramAddress.vue'
 
 const router = useRouter()
 const { userJwt, isTelegram, userSettings } = useGlobalState()
 
-const { t } = useI18n({
+const { locale, t } = useI18n({
   messages: {
-    en: { addresses: 'Addresses', loginRequired: 'Please log in to manage addresses' },
-    zh: { addresses: '地址管理', loginRequired: '请登录以管理地址' }
+    en: {
+      addresses: 'Addresses',
+      subtitle: 'Manage active inbox identities, bind existing addresses, and switch between them without leaving the workspace.',
+      loginRequired: 'Please log in to manage addresses',
+      createOrBind: 'Create or Bind',
+    },
+    zh: {
+      addresses: '地址管理',
+      subtitle: '管理当前收件地址、绑定已有地址，并在不离开工作区的情况下快速切换身份。',
+      loginRequired: '请登录以管理地址',
+      createOrBind: '创建或绑定',
+    }
   }
 })
 </script>
 
 <template>
-  <div class="addresses-page">
-    <h2 class="page-title">{{ t('addresses') }}</h2>
+  <div class="ds-page-shell addresses-page">
+    <header class="ds-page-header ds-page-header--compact">
+      <div class="ds-page-copy">
+        <span class="ds-page-kicker">{{ t('addresses') }}</span>
+        <h1 class="ds-page-title ds-page-title--sm">{{ t('addresses') }}</h1>
+        <p class="ds-page-subtitle">{{ t('subtitle') }}</p>
+      </div>
+      <div class="ds-page-actions">
+        <n-button type="primary" @click="router.push(getRouterPathWithLang('/addresses/new', locale.value))">
+          {{ t('createOrBind') }}
+        </n-button>
+      </div>
+    </header>
+
     <div v-if="isTelegram">
-      <TelegramAddress />
+      <div class="ds-panel">
+        <div class="ds-panel-body">
+          <TelegramAddress />
+        </div>
+      </div>
     </div>
     <div v-else-if="userJwt && userSettings.user_email">
-      <AddressManagement />
+      <div class="ds-panel">
+        <div class="ds-panel-body">
+          <AddressManagement />
+        </div>
+      </div>
     </div>
     <div v-else class="login-prompt">
-      <n-card :bordered="false" embedded style="max-width: 600px; margin: 0 auto;">
+      <div class="ds-panel login-panel">
         <n-empty :description="t('loginRequired')">
           <template #extra>
-            <n-button type="primary" @click="router.push('/auth/login')">
+            <n-button type="primary" @click="router.push(getRouterPathWithLang('/auth/login', locale.value))">
               {{ t('loginRequired') }}
             </n-button>
           </template>
         </n-empty>
-      </n-card>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
 .addresses-page {
-  max-width: 900px;
-  margin: 0 auto;
-}
-.page-title {
-  margin: 0 0 16px;
-  font-size: 20px;
-  font-weight: 600;
 }
 .login-prompt {
+  display: grid;
+}
+
+.login-panel {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 28px;
   text-align: center;
-  padding: 20px 0;
 }
 </style>

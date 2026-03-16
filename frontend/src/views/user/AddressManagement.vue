@@ -10,7 +10,7 @@ import { getRouterPathWithLang } from '../../utils'
 
 import Login from '../common/Login.vue';
 
-const { jwt } = useGlobalState()
+const { jwt, loading } = useGlobalState()
 const message = useMessage()
 const router = useRouter()
 
@@ -214,7 +214,7 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div>
+    <div class="address-management">
         <n-modal v-model:show="showTranferAddress" preset="dialog" :title="t('transferAddress')">
             <span>
                 <p>{{ t("transferAddressTip") }}</p>
@@ -229,7 +229,7 @@ onMounted(async () => {
         </n-modal>
         <n-tabs type="segment">
             <n-tab-pane name="address" :tab="t('address')">
-                <div style="overflow: auto;">
+                <div class="table-shell">
                     <n-data-table :columns="columns" :data="data" :bordered="false" embedded />
                 </div>
             </n-tab-pane>
@@ -241,6 +241,15 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.address-management {
+    display: grid;
+    gap: 12px;
+}
+
+.table-shell {
+    overflow: auto;
+}
+
 .n-data-table {
     min-width: 700px;
 }

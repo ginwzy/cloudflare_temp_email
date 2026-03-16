@@ -37,11 +37,15 @@ onMounted(async () => {
   <div class="app-layout">
     <AppSidebar v-if="!isMobile" />
     <div class="app-content">
-      <div class="content-inner">
-        <AddressBar v-if="!settings.address" />
-        <router-view />
+      <div class="content-shell">
+        <div class="content-inner">
+          <AddressBar v-if="!settings.address" class="layout-address-bar" />
+          <div class="route-stage">
+            <router-view />
+          </div>
+        </div>
+        <Footer class="app-footer" />
       </div>
-      <Footer />
     </div>
     <BottomTabBar v-if="isMobile" />
   </div>
@@ -50,30 +54,66 @@ onMounted(async () => {
 <style scoped>
 .app-layout {
   display: flex;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  position: relative;
+  isolation: isolate;
 }
+
 .app-content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  min-height: 100vh;
   overflow-x: hidden;
   overflow-y: auto;
-  background: var(--ds-bg);
 }
+
+.content-shell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 20px 24px 10px;
+}
+
 .content-inner {
   flex: 1;
-  padding: 20px;
   width: 100%;
   max-width: var(--ds-content-max-width);
   margin: 0 auto;
-  box-sizing: border-box;
+  display: grid;
+  gap: 16px;
 }
+
+.route-stage {
+  min-height: calc(100vh - 120px);
+}
+
+.app-footer {
+  width: 100%;
+  max-width: var(--ds-content-max-width);
+  margin: 14px auto 0;
+  opacity: 0.88;
+}
+
 @media (max-width: 768px) {
+  .app-layout {
+    display: block;
+  }
+
+  .content-shell {
+    padding: 12px 12px calc(12px + var(--ds-bottom-bar-height) + var(--ds-safe-bottom));
+  }
+
   .content-inner {
-    padding: 12px;
-    padding-bottom: calc(12px + var(--ds-bottom-bar-height));
+    gap: 12px;
+  }
+
+  .route-stage {
+    min-height: auto;
+  }
+
+  .app-footer {
+    margin-top: 12px;
   }
 }
 </style>

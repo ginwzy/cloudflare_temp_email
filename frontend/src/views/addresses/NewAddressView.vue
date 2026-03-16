@@ -11,21 +11,27 @@ const { t } = useI18n({
 </script>
 
 <template>
-  <div class="new-address-page">
-    <h2 class="page-title">{{ t('newAddress') }}</h2>
-    <n-card :bordered="false" embedded style="max-width: 600px;">
-      <Login />
-    </n-card>
+  <div class="ds-page-shell new-address-page">
+    <header class="ds-page-header ds-page-header--compact">
+      <div class="ds-page-copy">
+        <span class="ds-page-kicker">{{ t('newAddress') }}</span>
+        <h1 class="ds-page-title ds-page-title--sm">{{ t('newAddress') }}</h1>
+      </div>
+    </header>
+    <div class="ds-panel login-panel">
+      <div class="ds-panel-body">
+        <Login />
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .new-address-page {
-  max-width: 600px;
+  width: min(780px, 100%);
 }
-.page-title {
-  margin: 0 0 16px;
-  font-size: 20px;
-  font-weight: 600;
+
+.login-panel {
+  width: 100%;
 }
 </style>

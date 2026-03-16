@@ -11,18 +11,23 @@ const { t } = useI18n({
 </script>
 
 <template>
-  <div class="auto-reply-settings">
-    <h3 class="section-title">{{ t('autoReply') }}</h3>
-    <n-card size="small">
-      <AutoReply />
-    </n-card>
+  <div class="ds-settings-section auto-reply-settings">
+    <div>
+      <h3 class="section-title">{{ t('autoReply') }}</h3>
+    </div>
+    <div class="ds-panel">
+      <div class="ds-panel-body">
+        <AutoReply />
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .section-title {
-  margin: 0 0 12px;
+  margin: 0;
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 </style>
