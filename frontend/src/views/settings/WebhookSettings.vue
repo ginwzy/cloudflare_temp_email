@@ -11,23 +11,18 @@ const { t } = useI18n({
 </script>
 
 <template>
-  <div class="ds-settings-section webhook-settings">
-    <div>
-      <h3 class="section-title">{{ t('webhook') }}</h3>
-    </div>
-    <div class="ds-panel">
-      <div class="ds-panel-body">
-        <Webhook />
-      </div>
-    </div>
+  <div class="webhook-settings">
+    <h3 class="section-title">{{ t('webhook') }}</h3>
+    <n-card size="small">
+      <Webhook />
+    </n-card>
   </div>
 </template>
 
 <style scoped>
 .section-title {
-  margin: 0;
+  margin: 0 0 12px;
   font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-weight: 600;
 }
 </style>

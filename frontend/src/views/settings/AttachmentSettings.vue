@@ -11,23 +11,18 @@ const { t } = useI18n({
 </script>
 
 <template>
-  <div class="ds-settings-section attachment-settings">
-    <div>
-      <h3 class="section-title">{{ t('attachments') }}</h3>
-    </div>
-    <div class="ds-panel">
-      <div class="ds-panel-body">
-        <Attachment />
-      </div>
-    </div>
+  <div class="attachment-settings">
+    <h3 class="section-title">{{ t('attachments') }}</h3>
+    <n-card size="small">
+      <Attachment />
+    </n-card>
   </div>
 </template>
 
 <style scoped>
 .section-title {
-  margin: 0;
+  margin: 0 0 12px;
   font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-weight: 600;
 }
 </style>

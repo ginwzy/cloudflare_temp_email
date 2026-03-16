@@ -16,47 +16,25 @@ const { t } = useI18n({
 </script>
 
 <template>
-  <div class="ds-settings-stack account-settings">
-    <section class="ds-settings-section">
-      <div>
-        <h3 class="section-title">{{ t('account') }}</h3>
-      </div>
-      <div class="ds-panel">
-        <div class="ds-panel-body">
-          <IndexAccountSettings />
-        </div>
-      </div>
-    </section>
-
-    <section v-if="userSettings.user_email" class="ds-settings-section">
-      <div>
-        <h3 class="section-title">{{ t('userAccount') }}</h3>
-      </div>
-      <div class="ds-panel">
-        <div class="ds-panel-body">
-          <UserSettingsPage />
-        </div>
-      </div>
-    </section>
-
-    <section class="ds-settings-section">
-      <div>
-        <h3 class="section-title">{{ t('appearance') }}</h3>
-      </div>
-      <div class="ds-panel">
-        <div class="ds-panel-body">
-          <Appearance :showUseSimpleIndex="true" />
-        </div>
-      </div>
-    </section>
+  <div class="account-settings">
+    <h3 class="section-title">{{ t('account') }}</h3>
+    <n-card size="small">
+      <IndexAccountSettings />
+    </n-card>
+    <n-card v-if="userSettings.user_email" size="small" style="margin-top: 16px;">
+      <UserSettingsPage />
+    </n-card>
+    <h3 class="section-title" style="margin-top: 24px;">{{ t('appearance') }}</h3>
+    <n-card size="small">
+      <Appearance :showUseSimpleIndex="true" />
+    </n-card>
   </div>
 </template>
 
 <style scoped>
 .section-title {
-  margin: 0;
+  margin: 0 0 12px;
   font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-weight: 600;
 }
 </style>

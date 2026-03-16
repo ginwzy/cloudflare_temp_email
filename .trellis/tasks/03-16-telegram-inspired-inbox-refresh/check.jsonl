@@ -1,6 +1,0 @@
-{"file": ".claude/commands/trellis/finish-work.md", "reason": "Finish work checklist"}
-{"file": ".claude/commands/trellis/check-frontend.md", "reason": "Frontend check spec"}
-{"file": ".trellis/spec/frontend/visual-design-guidelines.md", "reason": "Review target visual system, motion, and layout contracts"}
-{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Review component composition and styling decisions against repo conventions"}
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Review accessibility, motion budget, and mobile verification requirements"}
-{"file": "frontend/public/telegram-inspired-draft.html", "reason": "Compare implementation output against approved static style draft"}

@@ -55,29 +55,16 @@ const navigate = async (path) => {
 <template>
   <div class="settings-layout" :class="{ mobile: isMobile }">
     <div v-if="!isMobile && navItems.length > 1" class="settings-nav">
-      <div class="settings-nav-inner">
-        <div class="settings-nav-copy">
-          <span class="settings-nav-kicker">{{ t('settings') }}</span>
-          <h3 class="settings-nav-title">{{ t('settings') }}</h3>
-        </div>
-        <button
-          v-for="item in navItems"
-          :key="item.key"
-          type="button"
-          class="settings-nav-item"
-          :class="{ active: activeKey === item.key }"
-          :aria-current="activeKey === item.key ? 'page' : undefined"
-          @click="navigate(item.path)"
-        >
-          <n-icon :component="item.icon" :size="18" />
-          <span>{{ item.label }}</span>
-        </button>
+      <h3 class="settings-nav-title">{{ t('settings') }}</h3>
+      <div v-for="item in navItems" :key="item.key"
+        class="settings-nav-item" :class="{ active: activeKey === item.key }"
+        @click="navigate(item.path)">
+        <n-icon :component="item.icon" :size="18" />
+        <span>{{ item.label }}</span>
       </div>
     </div>
     <div class="settings-content">
-      <div class="settings-content-inner">
-        <router-view />
-      </div>
+      <router-view />
     </div>
   </div>
 </template>
@@ -87,105 +74,44 @@ const navigate = async (path) => {
   display: flex;
   gap: 24px;
   min-height: 400px;
-  max-width: 1120px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 .settings-layout.mobile {
   flex-direction: column;
-  gap: 12px;
+  gap: 0;
 }
 .settings-nav {
-  width: 240px;
+  width: 200px;
   flex-shrink: 0;
 }
-
-.settings-nav-inner {
-  display: grid;
-  gap: 8px;
-  padding: 18px;
-  border: 1px solid var(--ds-border);
-  border-radius: var(--ds-radius-xl);
-  background: var(--ds-surface-overlay);
-  backdrop-filter: blur(18px);
-  box-shadow: var(--ds-shadow-md);
-}
-
-.settings-nav-copy {
-  display: grid;
-  gap: 6px;
-  margin-bottom: 4px;
-}
-
-.settings-nav-kicker {
-  color: var(--ds-primary);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
 .settings-nav-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  margin: 0 0 12px 12px;
+  font-size: 16px;
+  font-weight: 600;
   color: var(--ds-text);
 }
-
 .settings-nav-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  width: 100%;
-  padding: 12px 14px;
-  border: 1px solid transparent;
-  border-radius: 15px;
-  background: transparent;
-  font: inherit;
+  padding: 10px 12px;
+  border-radius: var(--ds-radius-sm);
   cursor: pointer;
   color: var(--ds-text-secondary);
-  font-weight: 600;
+  font-weight: 500;
   font-size: 14px;
-  text-align: left;
-  transition:
-    transform var(--ds-motion-fast) var(--ds-ease-standard),
-    color var(--ds-motion-fast) var(--ds-ease-standard),
-    background-color var(--ds-motion-fast) var(--ds-ease-standard),
-    border-color var(--ds-motion-fast) var(--ds-ease-standard),
-    box-shadow var(--ds-motion-fast) var(--ds-ease-standard);
+  transition: all var(--ds-transition);
 }
-.settings-nav-item:hover,
-.settings-nav-item:focus-visible {
-  transform: translateY(-1px);
-  background: color-mix(in srgb, var(--ds-surface-soft) 92%, transparent);
-  border-color: var(--ds-border);
-  color: var(--ds-text);
-  box-shadow: var(--ds-shadow-sm);
-}
+.settings-nav-item:hover { background: var(--ds-bg); color: var(--ds-text); }
 .settings-nav-item.active {
-  background: color-mix(in srgb, var(--ds-primary-soft) 88%, var(--ds-surface-strong) 12%);
-  border-color: color-mix(in srgb, var(--ds-primary) 20%, var(--ds-border));
+  background: color-mix(in srgb, var(--ds-primary) 10%, transparent);
   color: var(--ds-primary);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24);
+  font-weight: 600;
 }
 .settings-content {
   flex: 1;
   min-width: 0;
-}
-
-.settings-content-inner {
-  min-height: 100%;
-  padding: 18px 20px;
-  border: 1px solid var(--ds-border);
-  border-radius: var(--ds-radius-xl);
-  background: var(--ds-surface-overlay);
-  backdrop-filter: blur(18px);
-  box-shadow: var(--ds-shadow-md);
-}
-
-@media (max-width: 768px) {
-  .settings-content-inner {
-    padding: 16px;
-  }
+  max-width: 800px;
 }
 </style>
