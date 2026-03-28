@@ -13,6 +13,7 @@ const props = defineProps({
 });
 
 const message = useMessage()
+const userManagementApiBase = '/admin/user_management'
 
 const { locale, t } = useI18n({
     messages: {
@@ -36,7 +37,7 @@ const data = ref([])
 const fetchData = async () => {
     try {
         const { results } = await api.fetch(
-            `/admin/users/bind_address/${props.user_id}`,
+            `${userManagementApiBase}/bind_address/${props.user_id}`,
         );
         data.value = results;
     } catch (error) {

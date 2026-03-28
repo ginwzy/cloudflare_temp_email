@@ -67,6 +67,7 @@ const data = ref([])
 const count = ref(0)
 const page = ref(1)
 const pageSize = ref(20)
+const userManagementApiBase = '/admin/user_management'
 
 const userQuery = ref('')
 const showResetPassword = ref(false)
@@ -105,7 +106,7 @@ const fetchData = async () => {
     try {
         userQuery.value = userQuery.value.trim()
         const { results, count: userCount } = await api.fetch(
-            `/admin/users`
+            userManagementApiBase
             + `?limit=${pageSize.value}`
             + `&offset=${(page.value - 1) * pageSize.value}`
             + (userQuery.value ? `&query=${userQuery.value}` : '')
@@ -126,7 +127,7 @@ const resetPassword = async () => {
         return;
     }
     try {
-        await api.fetch(`/admin/users/${curUserId.value}/reset_password`, {
+        await api.fetch(`${userManagementApiBase}/${curUserId.value}/reset_password`, {
             method: "POST",
             body: JSON.stringify({
                 password: await hashPassword(newResetPassword.value)
@@ -146,7 +147,7 @@ const createUser = async () => {
         return;
     }
     try {
-        await api.fetch(`/admin/users`, {
+        await api.fetch(userManagementApiBase, {
             method: "POST",
             body: JSON.stringify({
                 email: user.value.email,
@@ -164,7 +165,7 @@ const createUser = async () => {
 
 const deleteUser = async () => {
     try {
-        await api.fetch(`/admin/users/${curUserId.value}`, {
+        await api.fetch(`${userManagementApiBase}/${curUserId.value}`, {
             method: "DELETE"
         });
         message.success(t('success'));

@@ -68,6 +68,12 @@ For each boundary:
 
 **Good**: Each layer only knows its neighbors
 
+### Mistake 4: Page Route And API Route Collisions
+
+**Bad**: Reusing the exact same path for a SPA page and a JSON API endpoint on the same origin
+
+**Good**: Keep page routes and API routes in separate namespaces, or force API traffic onto a dedicated backend origin
+
 ---
 
 ## Checklist for Cross-Layer Features
